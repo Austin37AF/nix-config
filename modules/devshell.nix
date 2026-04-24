@@ -1,12 +1,9 @@
-{ pkgs }: pkgs.mkShell {
-  packages = [
-    pkgs.go
-    pkgs.python3
-    pkgs.opentofu
-    pkgs.jq
-    pkgs.yq
-    pkgs.powerline-go
-  ];
+{ pkgs }:
+let
+  packages = import ./packages.nix { inherit pkgs; };
+in
+pkgs.mkShell {
+  packages = packages.cli ++ packages.dev;
   
   shellHook = ''
     echo "🛠  Dev shell loaded: go, python, opentofu, jq, yq"
@@ -33,7 +30,7 @@
     
     # Powerline-go prompt with dev shell indicator
     function _update_ps1() {
-      PS1="$(powerline-go -error $? -shell bash -modules "shell-var,cwd,git,exit" -shell-var NIX_SHELL_TAG)"
+      PS1="$(powerline-go -error $? -shell bash -modules "shell-var,kube,cwd,git,exit" -shell-var NIX_SHELL_TAG -shorten-eks-names -shorten-gke-names)"
     }
     export NIX_SHELL_TAG="[dev]"
     PROMPT_COMMAND="_update_ps1; $PROMPT_COMMAND"

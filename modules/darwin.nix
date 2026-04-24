@@ -1,15 +1,10 @@
-{ pkgs, config, ... }: {
+{ pkgs, config, ... }:
+let
+  packages = import ./packages.nix { inherit pkgs; };
+in
+{
   # System packages
-  environment.systemPackages = [ 
-    pkgs.vim
-    pkgs.mkalias
-    pkgs.obsidian
-    pkgs.alt-tab-macos
-    pkgs.hidden-bar
-    pkgs.rectangle
-    pkgs.stats
-    pkgs.the-unarchiver
-  ];
+  environment.systemPackages = packages.gui;
   
   # Application aliases for Spotlight
   system.activationScripts.applications.text = let

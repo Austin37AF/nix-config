@@ -8,11 +8,12 @@ Declarative macOS system configuration using nix-darwin, nix-homebrew, and Home 
 ~/nix/
 ├── flake.nix              # Entry point
 ├── modules/
-│   ├── darwin.nix         # System settings, packages, defaults
+│   ├── darwin.nix         # System settings, defaults
 │   ├── homebrew.nix       # Homebrew brews and casks
 │   ├── zsh.nix            # Shell configuration
 │   ├── home.nix           # Home Manager (git, powerline-go)
-│   └── devshell.nix       # Dev shell for projects without Devbox
+│   ├── devshell.nix       # Dev shell for projects without Devbox
+│   └── packages.nix       # Shared package lists (cli, dev, gui)
 ```
 
 ## Quick Commands
@@ -80,8 +81,14 @@ nix flake update
 - Zsh completions (sparkctl, valhalla, kubectl)
 
 ### Dev Shell (`devshell.nix`)
-- go, python3, opentofu, jq, yq
+- Includes all CLI tools plus: go, python3, opentofu
+- Shows `[dev]` tag and k8s context in prompt
 - Invoke with `dev` alias
+
+### Shared Packages (`packages.nix`)
+- **cli**: awscli, kubectl, helm, k9s, gh, pre-commit, gcloud, jq, yq
+- **dev**: go, python3, opentofu, powerline-go
+- **gui**: vim, obsidian, alt-tab, hidden-bar, rectangle, stats, the-unarchiver
 
 ## Garbage Collection
 

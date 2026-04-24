@@ -1,0 +1,34 @@
+{ pkgs }: {
+  # CLI tools - shared between system and dev shell
+  cli = [
+    pkgs.awscli2
+    pkgs.kubectl
+    pkgs.kubernetes-helm
+    pkgs.k9s
+    pkgs.gh
+    pkgs.pre-commit
+    pkgs.google-cloud-sdk
+    pkgs.jq
+    pkgs.yq
+  ];
+  
+  # Dev-only tools
+  dev = [
+    pkgs.go
+    pkgs.python3
+    pkgs.opentofu
+    pkgs.powerline-go
+  ];
+  
+  # GUI apps (system only)
+  gui = [
+    pkgs.vim
+    pkgs.mkalias
+    pkgs.obsidian
+    pkgs.alt-tab-macos
+    pkgs.hidden-bar
+    pkgs.rectangle
+    pkgs.stats
+    pkgs.the-unarchiver
+  ];
+}

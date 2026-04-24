@@ -18,9 +18,9 @@
       # Powerline-go prompt
       function powerline_precmd() {
         if [ -n "$NIX_SHELL_TAG" ]; then
-          PS1="$(powerline-go -error $? -shell zsh -modules shell-var,cwd,git,exit -shell-var NIX_SHELL_TAG)"
+          PS1="$(powerline-go -error $? -shell zsh -modules shell-var,kube,cwd,git,exit -shell-var NIX_SHELL_TAG -shorten-eks-names -shorten-gke-names)"
         else
-          PS1="$(powerline-go -error $? -shell zsh)"
+          PS1="$(powerline-go -error $? -shell zsh -modules kube,cwd,git,exit -shorten-eks-names -shorten-gke-names)"
         fi
       }
 

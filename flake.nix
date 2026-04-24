@@ -28,7 +28,6 @@
         [ 
           pkgs.neovim
           pkgs.mkalias
-          pkgs.alacritty
           pkgs.obsidian
           pkgs.alt-tab-macos
           pkgs.hidden-bar
@@ -57,6 +56,22 @@
 	  done
 	'';
 
+      system.defaults = {
+        dock = {
+          autohide = true;
+          show-process-indicators = false;
+          persistent-apps = [
+            "${pkgs.obsidian}/Applications/Obsidian.app"
+            "/Applications/Google Chrome.app"
+            "/Applications/Slack.app"
+            "/Applications/Docker.app"
+            "/Applications/Windsurf.app"
+            "/System/Applications/Utilities/Terminal.app"
+            "/System/Applications/Notes.app"
+          ];
+        };
+      };
+
       # Necessary for using flakes on this system.
       nix.settings.experimental-features = "nix-command flakes";
 
@@ -80,6 +95,8 @@
       homebrew = {
         enable = true;
         onActivation.cleanup = "zap";
+        onActivation.autoUpdate = true;
+        onActivation.upgrade = true;
         brews = [
           "awscli"
           "gh"

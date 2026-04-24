@@ -21,7 +21,16 @@
   };
 
   outputs = inputs@{ self, nix-darwin, nixpkgs, nix-homebrew, home-manager, homebrew-core, homebrew-cask }:
+  let
+    pkgs = import nixpkgs {
+      system = "aarch64-darwin";
+      config.allowUnfree = true;
+    };
+  in
   {
+    # Dev shell for projects without their own Devbox
+    devShells.aarch64-darwin.default = import ./modules/devshell.nix { inherit pkgs; };
+
     darwinConfigurations."austin-m5-pro" = nix-darwin.lib.darwinSystem {
       modules = [
         # Core modules

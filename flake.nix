@@ -75,6 +75,28 @@
         screencapture = {
           location = "/Users/austin.mills/Pictures/Screenshots";
         };
+        
+        # Finder
+        finder = {
+          AppleShowAllExtensions = true;
+          ShowPathbar = true;
+          ShowStatusBar = true;
+          FXPreferredViewStyle = "Nlsv";
+          FXDefaultSearchScope = "SCcf";
+        };
+        
+        # Trackpad
+        trackpad = {
+          TrackpadRightClick = true;
+          TrackpadThreeFingerDrag = true;
+        };
+        
+        # Keyboard
+        NSGlobalDomain = {
+          KeyRepeat = 2;
+          InitialKeyRepeat = 15;
+          ApplePressAndHoldEnabled = false;
+        };
       };
 
       # Enable Touch ID for sudo
@@ -89,10 +111,6 @@
         enableCompletion = true;
         
         interactiveShellInit = ''
-          # Initialize completion system first
-          autoload -Uz compinit
-          compinit
-          
           # PATH additions
           export PATH=$PATH:~/.local/bin
           export PATH="$PATH:$GOPATH/bin"
@@ -107,11 +125,6 @@
           # Zscaler cert overrides
           export NODE_EXTRA_CA_CERTS=~/certs/bundle.crt
           export REQUESTS_CA_BUNDLE=~/certs/bundle.crt
-          
-          # Completions (after compinit)
-          source <(sparkctl completion zsh)
-          source <(valhalla completion zsh)
-          source <(kubectl completion zsh)
           
           # Aliases
           alias ll="ls -lG"
@@ -191,6 +204,36 @@
             home.username = "austin.mills";
             home.homeDirectory = lib.mkForce "/Users/austin.mills";
             home.stateVersion = "24.05";
+            
+            # Packages
+            home.packages = [ pkgs.powerline-go ];
+            
+            # Powerline-go prompt and completions
+            programs.zsh = {
+              enable = true;
+              initContent = ''
+                # Completions
+                source <(sparkctl completion zsh)
+                source <(valhalla completion zsh)
+                source <(kubectl completion zsh)
+                
+                # Powerline-go prompt
+                function powerline_precmd() {
+                  PS1="$(powerline-go -error $? -shell zsh)"
+                }
+
+                function install_powerline_precmd() {
+                  for s in "''${precmd_functions[@]}"; do
+                    if [ "$s" = "powerline_precmd" ]; then
+                      return
+                    fi
+                  done
+                  precmd_functions+=(powerline_precmd)
+                }
+
+                install_powerline_precmd
+              '';
+            };
             
             # Git configuration
             programs.git = {

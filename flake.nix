@@ -70,7 +70,13 @@
             "/System/Applications/Notes.app"
           ];
         };
+        screencapture = {
+          location = "/Users/austin.mills/Pictures/Screenshots";
+        };
       };
+
+      # Enable Touch ID for sudo
+      security.pam.services.sudo_local.touchIdAuth = true;
 
       # Necessary for using flakes on this system.
       nix.settings.experimental-features = "nix-command flakes";

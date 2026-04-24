@@ -26,7 +26,7 @@
       # $ nix-env -qaP | grep wget
       environment.systemPackages =
         [ 
-          pkgs.neovim
+          pkgs.vim
           pkgs.mkalias
           pkgs.obsidian
           pkgs.alt-tab-macos

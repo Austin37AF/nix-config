@@ -1,6 +1,7 @@
 { pkgs }:
 let
   packages = import ./packages.nix { inherit pkgs; };
+  env = import ./env.nix;
 in
 pkgs.mkShell {
   packages = packages.cli ++ packages.dev;
@@ -8,25 +9,8 @@ pkgs.mkShell {
   shellHook = ''
     echo "🛠  Dev shell loaded: go, python, opentofu, jq, yq"
     
-    # Aliases
-    alias ll="ls -lG"
-    alias k="kubectl"
-    alias google-auth="gcloud auth login --update-adc"
-    alias tf="tofu"
-    alias terraform="tofu"
-    alias tf-init-all="tofu init && tofu providers lock -platform=darwin_amd64 -platform=darwin_arm64 -platform=linux_arm64 -platform=linux_amd64"
-    
-    # PATH
-    export PATH=$PATH:~/.local/bin
-    export GOPATH=~/go
-    export PATH="$PATH:$GOPATH/bin"
-    
-    # Docker
-    export DOCKER_DEFAULT_PLATFORM=linux/amd64
-    
-    # Zscaler certs
-    export NODE_EXTRA_CA_CERTS=~/certs/bundle.crt
-    export REQUESTS_CA_BUNDLE=~/certs/bundle.crt
+    ${env.vars}
+    ${env.aliases}
     
     # Powerline-go prompt with dev shell indicator
     function _update_ps1() {

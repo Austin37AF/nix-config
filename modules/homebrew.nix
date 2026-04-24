@@ -7,6 +7,7 @@
     
     brews = [
       "awscli"
+      "direnv"
       "gh"
       "gimme-aws-creds"
       "k9s"

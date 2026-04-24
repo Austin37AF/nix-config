@@ -4,6 +4,16 @@
     enableCompletion = true;
     
     interactiveShellInit = ''
+      # Filter homebrew from fpath in nix/devbox shells to avoid compinit errors
+      if [ -n "$DEVBOX_SHELL_ENABLED" ] || [ -n "$IN_NIX_SHELL" ]; then
+        fpath=(''${fpath:#/opt/homebrew/*})
+      fi
+      
+      # Set shell tag for devbox shells (for powerline-go prompt)
+      if [ -n "$DEVBOX_SHELL_ENABLED" ]; then
+        export NIX_SHELL_TAG='[devbox]'
+      fi
+      
       # PATH additions
       export PATH=$PATH:~/.local/bin
       export PATH="$PATH:$GOPATH/bin"

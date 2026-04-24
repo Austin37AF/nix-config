@@ -17,7 +17,11 @@
       
       # Powerline-go prompt
       function powerline_precmd() {
-        PS1="$(powerline-go -error $? -shell zsh)"
+        if [ -n "$NIX_SHELL_TAG" ]; then
+          PS1="$(powerline-go -error $? -shell zsh -modules shell-var,cwd,git,exit -shell-var NIX_SHELL_TAG)"
+        else
+          PS1="$(powerline-go -error $? -shell zsh)"
+        fi
       }
 
       function install_powerline_precmd() {

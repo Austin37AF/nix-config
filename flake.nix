@@ -6,6 +6,8 @@
     nix-darwin.url = "github:nix-darwin/nix-darwin/master";
     nix-darwin.inputs.nixpkgs.follows = "nixpkgs";
     nix-homebrew.url = "github:zhaofengli/nix-homebrew";
+    home-manager.url = "github:nix-community/home-manager";
+    home-manager.inputs.nixpkgs.follows = "nixpkgs";
 
     # Declarative tap management
     homebrew-core = {
@@ -18,7 +20,7 @@
     };
   };
 
-  outputs = inputs@{ self, nix-darwin, nixpkgs, nix-homebrew, homebrew-core, homebrew-cask }:
+  outputs = inputs@{ self, nix-darwin, nixpkgs, nix-homebrew, home-manager, homebrew-core, homebrew-cask }:
   let
     configuration = { pkgs, config, ... }: {
       nixpkgs.config.allowUnfree = true;
@@ -81,8 +83,45 @@
       # Necessary for using flakes on this system.
       nix.settings.experimental-features = "nix-command flakes";
 
-      # Enable alternative shell support in nix-darwin.
-      # programs.fish.enable = true;
+      # Zsh configuration
+      programs.zsh = {
+        enable = true;
+        enableCompletion = true;
+        
+        interactiveShellInit = ''
+          # Initialize completion system first
+          autoload -Uz compinit
+          compinit
+          
+          # PATH additions
+          export PATH=$PATH:~/.local/bin
+          export PATH="$PATH:$GOPATH/bin"
+          export PATH="/Users/austin.mills/.codeium/windsurf/bin:$PATH"
+          
+          # Go
+          GOPATH=~/go
+          
+          # Docker
+          export DOCKER_DEFAULT_PLATFORM=linux/amd64
+          
+          # Zscaler cert overrides
+          export NODE_EXTRA_CA_CERTS=~/certs/bundle.crt
+          export REQUESTS_CA_BUNDLE=~/certs/bundle.crt
+          
+          # Completions (after compinit)
+          source <(sparkctl completion zsh)
+          source <(valhalla completion zsh)
+          source <(kubectl completion zsh)
+          
+          # Aliases
+          alias ll="ls -lG"
+          alias k="kubectl"
+          alias google-auth="gcloud auth login --update-adc"
+          alias tf="terraform"
+          alias tf-init-all="terraform init && terraform providers lock -platform=darwin_amd64 -platform=darwin_arm64 -platform=linux_arm64 -platform=linux_amd64"
+          alias rebuild="sudo darwin-rebuild switch --flake ~/nix#austin-m5-pro"
+        '';
+      };
 
       # Set Git commit hash for darwin-version.
       system.configurationRevision = self.rev or self.dirtyRev or null;
@@ -143,6 +182,29 @@
         ({config, ...}: {
           homebrew.taps = builtins.attrNames config.nix-homebrew.taps;
         })
+        # Home Manager
+        home-manager.darwinModules.home-manager
+        {
+          home-manager.useGlobalPkgs = true;
+          home-manager.useUserPackages = true;
+          home-manager.users."austin.mills" = { pkgs, lib, ... }: {
+            home.username = "austin.mills";
+            home.homeDirectory = lib.mkForce "/Users/austin.mills";
+            home.stateVersion = "24.05";
+            
+            # Git configuration
+            programs.git = {
+              enable = true;
+              signing.format = null;
+              settings = {
+                user.name = "Austin37AF";
+                user.email = "austin@cyborgcomputing.net";
+                init.defaultBranch = "main";
+                push.autoSetupRemote = true;
+              };
+            };
+          };
+        }
       ];
     };
   };

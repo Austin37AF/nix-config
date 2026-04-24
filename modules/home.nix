@@ -1,4 +1,8 @@
-{ pkgs, lib, ... }: {
+{ pkgs, lib, ... }:
+let
+  env = import ./env.nix;
+in
+{
   home.username = "austin.mills";
   home.homeDirectory = lib.mkForce "/Users/austin.mills";
   home.stateVersion = "24.05";
@@ -17,10 +21,11 @@
       
       # Powerline-go prompt
       function powerline_precmd() {
+        local exit_code=$?
         if [ -n "$NIX_SHELL_TAG" ]; then
-          PS1="$(powerline-go -error $? -shell zsh -modules shell-var,kube,cwd,git,exit -shell-var NIX_SHELL_TAG -shorten-eks-names -shorten-gke-names)"
+          PS1="$(powerline-go -error $exit_code -shell zsh -modules shell-var,kube,cwd,git,exit -shell-var NIX_SHELL_TAG ${env.powerlineFlags})"
         else
-          PS1="$(powerline-go -error $? -shell zsh -modules kube,cwd,git,exit -shorten-eks-names -shorten-gke-names)"
+          PS1="$(powerline-go -error $exit_code -shell zsh -modules kube,cwd,git,exit ${env.powerlineFlags})"
         fi
       }
 
@@ -30,7 +35,7 @@
             return
           fi
         done
-        precmd_functions+=(powerline_precmd)
+        precmd_functions=(powerline_precmd "''${precmd_functions[@]}")
       }
 
       install_powerline_precmd

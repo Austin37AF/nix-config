@@ -13,7 +13,8 @@ Declarative macOS system configuration using nix-darwin, nix-homebrew, and Home 
 │   ├── zsh.nix            # Shell configuration
 │   ├── home.nix           # Home Manager (git, powerline-go)
 │   ├── devshell.nix       # Dev shell for projects without Devbox
-│   └── packages.nix       # Shared package lists (cli, dev, gui)
+│   ├── packages.nix       # Shared package lists (cli, dev, gui)
+│   └── env.nix            # Shared env vars, aliases, powerline config
 ```
 
 ## Quick Commands
@@ -62,7 +63,7 @@ nix flake update
 - vim, obsidian, alt-tab, hidden-bar, rectangle, stats, the-unarchiver
 
 ### Homebrew Brews (`homebrew.nix`)
-- awscli, gh, gimme-aws-creds, k9s, pre-commit, mas
+- awscli, direnv, gh, gimme-aws-creds, k9s, pre-commit, mas
 
 ### Homebrew Casks (`homebrew.nix`)
 - docker-desktop, gcloud-cli, google-drive, raycast
@@ -86,9 +87,14 @@ nix flake update
 - Invoke with `dev` alias
 
 ### Shared Packages (`packages.nix`)
-- **cli**: awscli, kubectl, helm, k9s, gh, pre-commit, gcloud, jq, yq
+- **cli**: awscli, kubectl, helm, k9s, gh, pre-commit, gcloud (with gke-auth-plugin), jq, yq
 - **dev**: go, python3, opentofu, powerline-go
 - **gui**: vim, obsidian, alt-tab, hidden-bar, rectangle, stats, the-unarchiver
+
+### Shared Environment (`env.nix`)
+- **vars**: PATH, GOPATH, Docker platform, Zscaler certs, GKE auth plugin
+- **aliases**: k, k_dd, tf, terraform, tf-init-all, google-auth, ll
+- **powerlineBash**: Dev shell prompt config with k8s context
 
 ## Garbage Collection
 

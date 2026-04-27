@@ -14,10 +14,10 @@ in
   programs.zsh = {
     enable = true;
     initContent = ''
-      # Completions
-      source <(sparkctl completion zsh)
-      source <(valhalla completion zsh)
-      source <(kubectl completion zsh)
+      # Completions (guarded to prevent hanging)
+      command -v sparkctl &>/dev/null && source <(sparkctl completion zsh)
+      command -v valhalla &>/dev/null && source <(valhalla completion zsh)
+      command -v kubectl &>/dev/null && source <(kubectl completion zsh)
       
       # Powerline-go prompt
       function powerline_precmd() {

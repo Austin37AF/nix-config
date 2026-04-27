@@ -57,7 +57,6 @@ in
     
     trackpad = {
       TrackpadRightClick = true;
-      TrackpadThreeFingerDrag = true;
     };
     
     NSGlobalDomain = {

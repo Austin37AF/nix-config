@@ -23,8 +23,11 @@ in
       alias rebuild="sudo darwin-rebuild switch --flake ~/nix#austin-m5-pro"
       alias dev="nix develop ~/nix"
       
-      # Direnv
-      eval "$(direnv hook zsh)"
+      # Direnv hook (silenced, only if .envrc exists)
+      export DIRENV_LOG_FORMAT=""
+      if command -v direnv &>/dev/null; then
+        eval "$(direnv hook zsh)"
+      fi
     '';
   };
 }

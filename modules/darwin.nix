@@ -4,7 +4,10 @@ let
 in
 {
   # System packages
-  environment.systemPackages = packages.gui;
+  environment.systemPackages = packages.gui ++ packages.cli;
+  
+  # Fonts
+  fonts.packages = packages.fonts;
   
   # Application aliases for Spotlight
   system.activationScripts.applications.text = let

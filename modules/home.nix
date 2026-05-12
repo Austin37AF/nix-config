@@ -10,6 +10,19 @@ in
   # Packages
   home.packages = [ pkgs.powerline-go ];
   
+  # Nix shell wrapper for Windsurf terminal
+  home.file.".local/bin/zsh-nix" = {
+    executable = true;
+    text = ''
+#!/bin/zsh -l
+# Enter nix shell, then fall back to regular zsh when exited
+nix develop /Users/austin.mills/nix --command /bin/zsh -l
+# After nix shell exits, stay in regular zsh
+exec /bin/zsh -l
+    '';
+  };
+  
+  
   # Custom powerline-go scripts
   home.file.".local/bin/powerline-go-mynix" = {
     executable = true;
@@ -40,8 +53,8 @@ fi
 # Map the context to your preferred Name, Foreground (FG), and Background (BG)
 case "$CURRENT_CTX" in
     "docker-desktop")
-        CONTENT="🐳"
-        FG=161
+        CONTENT="󰡨"
+        FG=15
         BG=24
         ;;
     "minikube")
@@ -139,6 +152,25 @@ fi
     '';
   };
   
+  # Windsurf settings
+  home.file."Library/Application Support/Windsurf/User/settings.json" = {
+    force = true;
+    text = builtins.toJSON {
+      "security.workspace.trust.untrustedFiles" = "open";
+      "files.autoSave" = "onFocusChange";
+      "terminal.integrated.fontFamily" = "JetBrainsMono Nerd Font";
+      "terminal.integrated.defaultProfile.osx" = "zsh-nix";
+      "terminal.integrated.profiles.osx" = {
+        bash = { path = "/bin/bash"; args = ["-l"]; };
+        zsh = { path = "/bin/zsh"; args = ["-l"]; };
+        zsh-nix = { path = "/Users/austin.mills/.local/bin/zsh-nix"; };
+      };
+      # Nix language server
+      "nix.enableLanguageServer" = true;
+      "nix.serverPath" = "nixd";
+    };
+  };
+  
   # Git configuration
   programs.git = {
     enable = true;
@@ -150,4 +182,5 @@ fi
       push.autoSetupRemote = true;
     };
   };
+  
 }

@@ -12,6 +12,7 @@
     ])
     pkgs.jq
     pkgs.yq
+    pkgs.nixd  # Nix language server for IDE support
   ];
   
   # Dev-only tools
@@ -20,6 +21,11 @@
     pkgs.python3
     pkgs.opentofu
     pkgs.powerline-go
+  ];
+  
+  # Fonts
+  fonts = [
+    pkgs.nerd-fonts.jetbrains-mono
   ];
   
   # GUI apps (system only)

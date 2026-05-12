@@ -7,10 +7,13 @@
   showKubeNamespace = false;
   
   powerlineBash = ''
-    function _update_ps1() {
-      PS1="$(powerline-go -error $? -shell bash -modules "mynix,mykube,cwd,git,exit" -shorten-eks-names -shorten-gke-names)"
-    }
-    PROMPT_COMMAND="_update_ps1; $PROMPT_COMMAND"
+    # Only set up powerline for interactive shells
+    if [[ $- == *i* ]]; then
+      function _update_ps1() {
+        PS1="$(powerline-go -error $? -shell bash -modules "mynix,mykube,cwd,git,exit" -shorten-eks-names -shorten-gke-names)"
+      }
+      PROMPT_COMMAND="_update_ps1; $PROMPT_COMMAND"
+    fi
   '';
   
   # Environment variables

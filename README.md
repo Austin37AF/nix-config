@@ -29,7 +29,7 @@ dev
 # Update flake inputs
 nix flake update
 
-# Exit nix shell to base zsh (for devbox)
+# Exit current shell
 exit
 ```
 
@@ -90,8 +90,7 @@ exit
 ### Dev Shell (`devshell.nix`)
 - Includes all CLI tools plus: go, python3, opentofu, powerline-go
 - Shows ❄️ indicator in prompt
-- **Windsurf auto-enters this shell** on terminal open
-- `exit` returns to base zsh for devbox
+- Enter with `dev` alias
 
 ### Shared Packages (`packages.nix`)
 - **cli**: awscli, kubectl, helm, k9s, gh, pre-commit, gcloud (with gke-auth-plugin), jq, yq, nixd
@@ -120,15 +119,16 @@ Custom modules display shell and Kubernetes context:
 
 Namespace is shown only when not `default`. To always show namespace, set `showKubeNamespace = true` in `env.nix`.
 
-## Devbox Workflow
+## Shell Workflow
 
-Windsurf terminals auto-enter the nix dev shell. For repos with devbox:
+Windsurf terminals open in regular zsh. Enter dev environments as needed:
 
 ```bash
-exit              # Exit nix shell → base zsh
-devbox shell      # Enter devbox → shows 📦
+dev               # Enter nix dev shell → shows ❄️
 exit              # Back to base zsh
-exit              # Close terminal
+
+devbox shell      # Enter devbox (in repos with devbox.json) → shows 📦
+exit              # Back to base zsh
 ```
 
 ## Garbage Collection

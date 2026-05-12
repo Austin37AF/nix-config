@@ -16,7 +16,7 @@ in
     text = ''
 #!/bin/zsh -l
 # Enter nix shell, then fall back to regular zsh when exited
-nix develop /Users/austin.mills/nix --command /bin/zsh -l
+nix develop /Users/austin.mills/nix --quiet --no-warn-dirty --command /bin/zsh -l
 # After nix shell exits, stay in regular zsh
 exec /bin/zsh -l
     '';

@@ -7,7 +7,8 @@ pkgs.mkShell {
   packages = packages.cli ++ packages.dev;
   
   shellHook = ''
-    echo "🛠  Dev shell loaded: go, python, opentofu, jq, yq"
+    # Only show message in interactive shells
+    [[ $- == *i* ]] && echo "🛠  Dev shell loaded: go, python, opentofu, jq, yq"
     
     ${env.vars}
     ${env.aliases}

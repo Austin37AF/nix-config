@@ -168,6 +168,10 @@ fi
       # Nix language server
       "nix.enableLanguageServer" = true;
       "nix.serverPath" = "nixd";
+      # Prevent Windsurf from trying to modify settings
+      "window.restoreWindows" = "all";
+      "workbench.startupEditor" = "none";
+      "telemetry.telemetryLevel" = "off";
     };
   };
   

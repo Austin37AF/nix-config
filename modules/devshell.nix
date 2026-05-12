@@ -12,5 +12,12 @@ pkgs.mkShell {
     ${env.vars}
     ${env.aliases}
     ${env.powerlineBash}
+    
+    # Bash completions
+    source ${pkgs.bash-completion}/share/bash-completion/bash_completion
+    source <(kubectl completion bash)
+    complete -o default -F __start_kubectl k
+    command -v sparkctl &>/dev/null && source <(sparkctl completion bash)
+    command -v valhalla &>/dev/null && source <(valhalla completion bash)
   '';
 }

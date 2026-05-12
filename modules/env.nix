@@ -3,11 +3,13 @@
   # Powerline-go config
   powerlineFlags = "-shorten-eks-names -shorten-gke-names";
   
+  # Show namespace in kube prompt (even when 'default')
+  showKubeNamespace = false;
+  
   powerlineBash = ''
     function _update_ps1() {
-      PS1="$(powerline-go -error $? -shell bash -modules "shell-var,kube,cwd,git,exit" -shell-var NIX_SHELL_TAG -shorten-eks-names -shorten-gke-names)"
+      PS1="$(powerline-go -error $? -shell bash -modules "mynix,mykube,cwd,git,exit" -shorten-eks-names -shorten-gke-names)"
     }
-    export NIX_SHELL_TAG="[dev]"
     PROMPT_COMMAND="_update_ps1; $PROMPT_COMMAND"
   '';
   

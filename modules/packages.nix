@@ -18,7 +18,7 @@
   # Dev-only tools
   dev = [
     pkgs.go
-    pkgs.python3
+    (pkgs.python3.withPackages (ps: [ ps.pip ]))
     pkgs.opentofu
     pkgs.powerline-go
   ];

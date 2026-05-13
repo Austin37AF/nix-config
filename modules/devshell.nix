@@ -14,6 +14,10 @@ pkgs.mkShell {
     ${env.aliases}
     ${env.powerlineBash}
     
+    # BRT devkit (only in dev shell)
+    export PATH="$PATH:~/.venvs/brt/bin"
+    alias brt="source ~/.venvs/brt/bin/activate"
+    
     # Bash completions
     source ${pkgs.bash-completion}/share/bash-completion/bash_completion
     source <(kubectl completion bash)

@@ -51,6 +51,9 @@ in
   # Enable Docker
   virtualisation.docker.enable = true;
 
+  # Fingerprint reader (Goodix)
+  services.fprintd.enable = true;
+
   # System state version - don't change after initial install
   system.stateVersion = "24.05";
 }

@@ -1,6 +1,7 @@
+# Darwin-specific zsh additions
 { ... }:
 let
-  env = import ./env.nix;
+  env = import ../common/env.nix;
 in
 {
   programs.zsh = {

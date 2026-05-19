@@ -13,6 +13,7 @@
     pkgs.jq
     pkgs.yq
     pkgs.nixd  # Nix language server for IDE support
+    # pkgs.direnv  # TODO: re-enable when cache is accessible (builds from source hang on tests)
   ];
   
   # Dev-only tools
@@ -26,17 +27,5 @@
   # Fonts
   fonts = [
     pkgs.nerd-fonts.jetbrains-mono
-  ];
-  
-  # GUI apps (system only)
-  gui = [
-    pkgs.vim
-    pkgs.mkalias
-    pkgs.obsidian
-    pkgs.alt-tab-macos
-    pkgs.hidden-bar
-    pkgs.rectangle
-    pkgs.stats
-    pkgs.the-unarchiver
   ];
 }

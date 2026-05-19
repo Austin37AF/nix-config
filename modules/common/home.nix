@@ -1,10 +1,13 @@
 { pkgs, lib, ... }:
 let
   env = import ./env.nix;
+  isDarwin = pkgs.stdenv.isDarwin;
 in
 {
-  home.username = "austin.mills";
-  home.homeDirectory = lib.mkForce "/Users/austin.mills";
+  home.username = if isDarwin then "austin.mills" else "austin";
+  home.homeDirectory = lib.mkForce (if isDarwin 
+    then "/Users/austin.mills" 
+    else "/home/austin");
   home.stateVersion = "24.05";
   
   # Packages
@@ -114,7 +117,7 @@ fi
   # Powerline-go prompt and completions
   programs.zsh = {
     enable = true;
-    enableCompletion = false;  # Handled by nix-darwin in /etc/zshrc
+    enableCompletion = false;  # Handled by system zsh module
     initContent = ''
       # Completions (guarded to prevent hanging)
       command -v sparkctl &>/dev/null && source <(sparkctl completion zsh)
@@ -138,28 +141,6 @@ fi
 
       install_powerline_precmd
     '';
-  };
-  
-  # Windsurf settings
-  home.file."Library/Application Support/Windsurf/User/settings.json" = {
-    force = true;
-    text = builtins.toJSON {
-      "security.workspace.trust.untrustedFiles" = "open";
-      "files.autoSave" = "onFocusChange";
-      "terminal.integrated.fontFamily" = "JetBrainsMono Nerd Font";
-      "terminal.integrated.defaultProfile.osx" = "zsh";
-      "terminal.integrated.profiles.osx" = {
-        bash = { path = "/bin/bash"; args = ["-l"]; };
-        zsh = { path = "/bin/zsh"; args = ["-l"]; };
-      };
-      # Nix language server
-      "nix.enableLanguageServer" = true;
-      "nix.serverPath" = "nixd";
-      # Prevent Windsurf from trying to modify settings
-      "window.restoreWindows" = "all";
-      "workbench.startupEditor" = "none";
-      "telemetry.telemetryLevel" = "off";
-    };
   };
   
   # Git configuration

@@ -1,13 +1,14 @@
 { pkgs, config, ... }:
 let
-  packages = import ./packages.nix { inherit pkgs; };
+  commonPackages = import ../common/packages.nix { inherit pkgs; };
+  darwinPackages = import ./packages.nix { inherit pkgs; };
 in
 {
   # System packages
-  environment.systemPackages = packages.gui ++ packages.cli;
+  environment.systemPackages = commonPackages.cli ++ darwinPackages.gui;
   
   # Fonts
-  fonts.packages = packages.fonts;
+  fonts.packages = commonPackages.fonts;
   
   # Application aliases for Spotlight
   system.activationScripts.applications.text = let

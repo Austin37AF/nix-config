@@ -4,10 +4,10 @@ let
   isDarwin = pkgs.stdenv.isDarwin;
 in
 {
-  home.username = if isDarwin then "austin.mills" else "austin";
+  home.username = if isDarwin then "austin.mills" else "austinm";
   home.homeDirectory = lib.mkForce (if isDarwin 
     then "/Users/austin.mills" 
-    else "/home/austin");
+    else "/home/austinm");
   home.stateVersion = "24.05";
   
   # Packages

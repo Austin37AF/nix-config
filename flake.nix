@@ -105,7 +105,7 @@
         {
           home-manager.useGlobalPkgs = true;
           home-manager.useUserPackages = true;
-          home-manager.users.austin = import ./modules/common/home.nix;
+          home-manager.users.austinm = import ./modules/common/home.nix;
         }
       ];
     };

@@ -41,7 +41,7 @@ in
   i18n.defaultLocale = "en_US.UTF-8";
 
   # User account
-  users.users.austin = {
+  users.users.austinm = {
     isNormalUser = true;
     description = "Austin";
     extraGroups = [ "networkmanager" "wheel" "docker" ];

@@ -1,7 +1,7 @@
 { pkgs }:
 let
-  packages = import ./packages.nix { inherit pkgs; };
-  env = import ./env.nix;
+  packages = import ./common/packages.nix { inherit pkgs; };
+  env = import ./common/env.nix;
 in
 pkgs.mkShell {
   packages = packages.cli ++ packages.dev;

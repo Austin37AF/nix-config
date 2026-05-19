@@ -8,6 +8,7 @@ in
     pkgs.vim
     pkgs.git
     pkgs.slack
+    pkgs.discord
     pkgs.google-chrome
     pkgs.adwaita-icon-theme
   ];

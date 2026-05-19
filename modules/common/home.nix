@@ -155,12 +155,10 @@ fi
     };
   };
 
-  # VSCode with extensions (NixOS only - Darwin uses Homebrew cask)
+  # VSCode (NixOS only - Darwin uses Homebrew cask)
+  # Install extensions manually: Ctrl+Shift+X -> search "Gemini"
   programs.vscode = lib.mkIf (!isDarwin) {
     enable = true;
-    extensions = with pkgs.vscode-extensions; [
-      google.geminicodeassist
-    ];
   };
   
 }

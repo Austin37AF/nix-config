@@ -18,9 +18,10 @@
       url = "github:homebrew/homebrew-cask";
       flake = false;
     };
+    nix-vscode-extensions.url = "github:nix-community/nix-vscode-extensions";
   };
 
-  outputs = inputs@{ self, nix-darwin, nixpkgs, nix-homebrew, home-manager, homebrew-core, homebrew-cask }:
+  outputs = inputs@{ self, nix-darwin, nixpkgs, nix-homebrew, home-manager, homebrew-core, homebrew-cask, nix-vscode-extensions }:
   let
     # Darwin pkgs
     darwinPkgs = import nixpkgs {
@@ -105,7 +106,12 @@
         {
           home-manager.useGlobalPkgs = true;
           home-manager.useUserPackages = true;
-          home-manager.users.austinm = import ./modules/common/home.nix;
+          home-manager.users.austinm = { ... }: {
+            imports = [ ./modules/common/home.nix ];
+            programs.vscode.extensions = [
+              nix-vscode-extensions.extensions.x86_64-linux.vscode-marketplace.google.gemini-code-assist
+            ];
+          };
         }
       ];
     };

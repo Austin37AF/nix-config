@@ -109,7 +109,7 @@
           home-manager.users.austinm = { ... }: {
             imports = [ ./modules/common/home.nix ];
             programs.vscode.extensions = [
-              nix-vscode-extensions.extensions.x86_64-linux.vscode-marketplace.google.gemini-code-assist
+              nix-vscode-extensions.extensions.x86_64-linux.vscode-marketplace.google.geminicodeassist
             ];
           };
         }

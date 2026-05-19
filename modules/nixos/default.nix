@@ -40,6 +40,11 @@ in
   time.timeZone = "America/Denver";
   i18n.defaultLocale = "en_US.UTF-8";
 
+  # Desktop environment (GNOME)
+  services.xserver.enable = true;
+  services.xserver.displayManager.gdm.enable = true;
+  services.desktopManager.gnome.enable = true;
+
   # User account
   users.users.austinm = {
     isNormalUser = true;

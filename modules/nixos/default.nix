@@ -10,6 +10,7 @@ in
     pkgs.vscode
     pkgs.slack
     pkgs.google-chrome
+    pkgs.adwaita-icon-theme
   ];
   
   # Fonts

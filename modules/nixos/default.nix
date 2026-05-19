@@ -7,6 +7,9 @@ in
   environment.systemPackages = commonPackages.cli ++ [
     pkgs.vim
     pkgs.git
+    pkgs.vscode
+    pkgs.slack
+    pkgs.google-chrome
   ];
   
   # Fonts

@@ -154,5 +154,13 @@ fi
       push.autoSetupRemote = true;
     };
   };
+
+  # VSCode with extensions (NixOS only - Darwin uses Homebrew cask)
+  programs.vscode = lib.mkIf (!isDarwin) {
+    enable = true;
+    extensions = with pkgs.vscode-extensions; [
+      google.geminicodeassist
+    ];
+  };
   
 }

@@ -18,7 +18,7 @@ in
   home.file.".local/bin/powerline-go-mynix" = {
     executable = true;
     text = ''
-#!/bin/bash
+#!/usr/bin/env bash
 # Show nix indicator - devbox gets package, nix develop gets snowflake
 if [ -n "$DEVBOX_SHELL_ENABLED" ]; then
     echo '[{"Content": "📦", "Foreground": 15, "Background": 99}]'
@@ -31,7 +31,7 @@ fi
   home.file.".local/bin/powerline-go-mykube" = {
     executable = true;
     text = ''
-#!/bin/bash
+#!/usr/bin/env bash
 
 # Get the current kube context
 CURRENT_CTX=$(kubectl config current-context 2>/dev/null)

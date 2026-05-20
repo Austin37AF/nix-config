@@ -36,10 +36,7 @@ in
   users.users.nixos.initialPassword = "nixos";
 
   # DHCP for initial boot (static IP applied after install)
-  networking = {
-    networkmanager.enable = true;
-    wireless.enable = false;
-  };
+  networking.networkmanager.enable = true;
 
   # Enable flakes
   nix.settings.experimental-features = [ "nix-command" "flakes" ];

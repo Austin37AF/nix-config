@@ -58,14 +58,23 @@ The ISO will be at `./result/iso/nixos-*.iso`
 
 ### 5. Create Bootable USB
 
+**Option A: Use the flash script (recommended)**
 ```bash
-# Find your USB device
+./scripts/flash-usb.sh
+```
+
+**Option B: Manual dd**
+```bash
+# List disks and find your USB (look for the correct size)
 diskutil list
 
-# Unmount and write ISO (replace diskN with your USB)
+# Unmount and write ISO (replace N with your USB disk number)
 diskutil unmountDisk /dev/diskN
 sudo dd if=./result/iso/nixos-*.iso of=/dev/rdiskN bs=4m status=progress
+diskutil eject /dev/diskN
 ```
+
+⚠️ **Warning:** Double-check the disk number! Writing to the wrong disk will erase it.
 
 ### 6. Initial Deployment (nixos-anywhere)
 

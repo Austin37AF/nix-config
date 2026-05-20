@@ -6,6 +6,7 @@
       "direnv"
     ];
     casks = [
+      # "balenaetcher"  # Currently broken in Homebrew - download from https://etcher.balena.io
       "docker-desktop"
       "google-chrome"
       "raycast"

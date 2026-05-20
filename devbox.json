@@ -16,6 +16,7 @@
       "echo ''",
       "echo 'Setup secrets:    sops secrets/k8s.yaml'",
       "echo 'Build ISO:        nix build .#k8s-installer-iso'",
+      "echo 'Flash USB:        open -a balenaEtcher'",
       "echo 'Deploy all:       nix run .#deploy'",
       "echo 'Deploy one:       nix run .#deploy .#k8s-server-1'",
       "echo ''",

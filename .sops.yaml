@@ -1,0 +1,33 @@
+# Sops configuration
+# 
+# This file defines who can decrypt secrets.
+# Add your age public key and each node's SSH host key.
+#
+# Get your age key:
+#   age-keygen -o ~/.config/sops/age/keys.txt
+#   cat ~/.config/sops/age/keys.txt | grep "public key"
+#
+# Get node SSH host keys (after first deploy):
+#   ssh-keyscan -t ed25519 192.168.1.100 | ssh-to-age
+
+keys:
+  # Your personal age key (for encrypting/editing secrets)
+  - &admin age1fvykwesuzhgq8dzltmevlkmwlslpxypdkzdq7zhlf9sr75kv2gfsvvxpah
+  
+  # Node SSH host keys (converted to age format)
+  # These are populated after initial deployment
+  # - &k8s-server-1 age1...
+  # - &k8s-server-2 age1...
+  # - &k8s-server-3 age1...
+  # - &k8s-agent-1 age1...
+
+creation_rules:
+  - path_regex: secrets/k8s\.yaml$
+    key_groups:
+      - age:
+          - *admin
+          # Uncomment after getting node host keys:
+          # - *k8s-server-1
+          # - *k8s-server-2
+          # - *k8s-server-3
+          # - *k8s-agent-1

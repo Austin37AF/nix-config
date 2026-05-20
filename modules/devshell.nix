@@ -14,6 +14,9 @@ pkgs.mkShell {
     ${env.aliases}
     ${env.powerlineBash}
     
+    # Homebrew (for packages not available/broken in nixpkgs, e.g. gimme-aws-creds)
+    export PATH="/opt/homebrew/bin:$PATH"
+    
     # BRT devkit (only in dev shell)
     export PATH="$PATH:~/.venvs/brt/bin"
     alias brt="source ~/.venvs/brt/bin/activate"

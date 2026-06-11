@@ -15,6 +15,7 @@
     pkgs.nixd  # Nix language server for IDE support
     # pkgs.direnv  # TODO: re-enable when cache is accessible (builds from source hang on tests)
     pkgs.icloudpd  # iCloud Photos Downloader
+    pkgs.prettier
   ];
   
   # Dev-only tools

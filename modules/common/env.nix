@@ -26,10 +26,6 @@
     # Docker
     export DOCKER_DEFAULT_PLATFORM=linux/amd64
     
-    # Zscaler cert overrides
-    export NODE_EXTRA_CA_CERTS=~/certs/bundle.crt
-    export REQUESTS_CA_BUNDLE=~/certs/bundle.crt
-    
     # GKE auth plugin
     export USE_GKE_GCLOUD_AUTH_PLUGIN=True
   '';

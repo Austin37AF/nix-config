@@ -85,6 +85,7 @@ in
 
   # Nix settings
   nix.settings.experimental-features = "nix-command flakes";
+  # Note: Zscaler SSL cert is configured in ../common/zscaler.nix (imported in flake.nix for work machines)
   
   # Garbage collection
   nix.gc = {

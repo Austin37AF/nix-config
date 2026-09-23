@@ -61,6 +61,9 @@
         ./modules/darwin/homebrew.nix
         ./modules/darwin/zsh.nix
         
+        # Zscaler SSL config (work machine only - remove for personal machines)
+        ./modules/common/zscaler.nix
+        
         # Set git revision
         { system.configurationRevision = self.rev or self.dirtyRev or null; }
         
@@ -76,13 +79,13 @@
               "homebrew/homebrew-core" = homebrew-core;
               "homebrew/homebrew-cask" = homebrew-cask;
             };
-            mutableTaps = false;
+            mutableTaps = true;
           };
         }
         
-        # Align homebrew taps config with nix-homebrew
-        ({ config, ... }: {
-          homebrew.taps = builtins.attrNames config.nix-homebrew.taps;
+        # Align homebrew taps config with nix-homebrew + additional taps from homebrew.nix
+        ({ config, lib, ... }: {
+          homebrew.taps = lib.mkAfter (builtins.attrNames config.nix-homebrew.taps);
         })
         
         # Home Manager

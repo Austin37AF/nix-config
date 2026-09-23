@@ -2,6 +2,7 @@
   homebrew = {
     enable = true;
     onActivation.cleanup = "zap";
+    taps = [];
     brews = [
       "direnv"
       "gimme-aws-creds"
@@ -12,6 +13,7 @@
       "google-chrome"
       "raycast"
       "slack"
+      "stats"
       "windsurf"
     ];
   };

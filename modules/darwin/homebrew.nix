@@ -5,7 +5,6 @@
     taps = [];
     brews = [
       "direnv"
-      "gimme-aws-creds"
     ];
     casks = [
       # "balenaetcher"  # Currently broken in Homebrew - download from https://etcher.balena.io

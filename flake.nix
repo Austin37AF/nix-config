@@ -61,8 +61,8 @@
         ./modules/darwin/homebrew.nix
         ./modules/darwin/zsh.nix
         
-        # Zscaler SSL config (work machine only - remove for personal machines)
-        ./modules/common/zscaler.nix
+        # Work machine config (Zscaler, gimme-aws-creds, etc.)
+        ./modules/hosts/work
         
         # Set git revision
         { system.configurationRevision = self.rev or self.dirtyRev or null; }

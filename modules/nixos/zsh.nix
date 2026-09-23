@@ -15,8 +15,8 @@ in
       ${env.aliases}
       
       # NixOS rebuild alias
-      alias rebuild="sudo nixos-rebuild switch --flake ~/nix#nixos-laptop"
-      alias dev="nix develop ~/nix"
+      alias rebuild="sudo nixos-rebuild switch --flake ~/homelab/nix#nixos-laptop"
+      alias dev="nix develop ~/homelab/nix"
       
       # Direnv hook (silenced)
       export DIRENV_LOG_FORMAT=""

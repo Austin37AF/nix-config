@@ -21,8 +21,8 @@ in
       ${env.aliases}
       
       # Zsh-only aliases
-      alias rebuild="sudo darwin-rebuild switch --flake ~/nix#austin-m5-pro"
-      alias dev="nix develop ~/nix"
+      alias rebuild="sudo darwin-rebuild switch --flake ~/homelab/nix#austin-m5-pro"
+      alias dev="nix develop ~/homelab/nix"
       
       # Direnv hook (silenced, only if .envrc exists)
       export DIRENV_LOG_FORMAT=""

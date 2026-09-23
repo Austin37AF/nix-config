@@ -21,12 +21,12 @@ in
       
       # Platform-specific rebuild alias
       ${if isDarwin then ''
-      alias rebuild="sudo darwin-rebuild switch --flake ~/nix#austin-m5-pro"
-      alias rebuild-home="sudo darwin-rebuild switch --flake ~/nix#austin-m5-pro-home"
+      alias rebuild="sudo darwin-rebuild switch --flake ~/homelab/nix#austin-m5-pro"
+      alias rebuild-home="sudo darwin-rebuild switch --flake ~/homelab/nix#austin-m5-pro-home"
       '' else ''
-      alias rebuild="sudo nixos-rebuild switch --flake ~/nix#nixos-laptop"
+      alias rebuild="sudo nixos-rebuild switch --flake ~/homelab/nix#nixos-laptop"
       ''}
-      alias dev="nix develop ~/nix"
+      alias dev="nix develop ~/homelab/nix"
       
       # Direnv hook (silenced, only if .envrc exists)
       export DIRENV_LOG_FORMAT=""

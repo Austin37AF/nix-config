@@ -22,6 +22,7 @@ in
       # Platform-specific rebuild alias
       ${if isDarwin then ''
       alias rebuild="sudo darwin-rebuild switch --flake ~/nix#austin-m5-pro"
+      alias rebuild-home="sudo darwin-rebuild switch --flake ~/nix#austin-m5-pro-home"
       '' else ''
       alias rebuild="sudo nixos-rebuild switch --flake ~/nix#nixos-laptop"
       ''}

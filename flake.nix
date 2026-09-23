@@ -54,20 +54,24 @@
     # ============================================
     # Darwin Configuration (macOS)
     # ============================================
-    darwinConfigurations."austin-m5-pro" = nix-darwin.lib.darwinSystem {
-      modules = [
-        # Core modules
+    # 
+    # Configurations:
+    #   austin-m5-pro       - Work machine (with Zscaler, gimme-aws-creds)
+    #   austin-m5-pro-home  - Personal mode (no work tools)
+    #
+    # Usage:
+    #   rebuild                                              # Work mode (default)
+    #   sudo darwin-rebuild switch --flake ~/nix#austin-m5-pro-home  # Personal mode
+    #
+    darwinConfigurations = let
+      # Base modules shared by all Darwin configs
+      baseModules = [
         ./modules/darwin/default.nix
         ./modules/darwin/homebrew.nix
         ./modules/darwin/zsh.nix
         
-        # Work machine config (Zscaler, gimme-aws-creds, etc.)
-        ./modules/hosts/work
-        
-        # Set git revision
         { system.configurationRevision = self.rev or self.dirtyRev or null; }
         
-        # nix-homebrew
         nix-homebrew.darwinModules.nix-homebrew
         {
           nix-homebrew = {
@@ -83,12 +87,10 @@
           };
         }
         
-        # Align homebrew taps config with nix-homebrew + additional taps from homebrew.nix
         ({ config, lib, ... }: {
           homebrew.taps = lib.mkAfter (builtins.attrNames config.nix-homebrew.taps);
         })
         
-        # Home Manager
         home-manager.darwinModules.home-manager
         {
           home-manager.useGlobalPkgs = true;
@@ -101,6 +103,19 @@
           };
         }
       ];
+      
+      # Work-specific modules
+      workModules = [ ./modules/hosts/work ];
+    in {
+      # Work machine (default)
+      "austin-m5-pro" = nix-darwin.lib.darwinSystem {
+        modules = baseModules ++ workModules;
+      };
+      
+      # Personal mode (no Zscaler, gimme-aws-creds, etc.)
+      "austin-m5-pro-home" = nix-darwin.lib.darwinSystem {
+        modules = baseModules;
+      };
     };
 
     # ============================================

@@ -5,7 +5,7 @@ Declarative macOS system configuration using nix-darwin, nix-homebrew, and Home 
 ## Structure
 
 ```
-~/nix/
+~/homelab/nix/
 ├── flake.nix              # Entry point
 ├── modules/
 │   ├── darwin.nix         # System settings, defaults, fonts
@@ -42,12 +42,13 @@ exit
 
 2. Clone this repo:
    ```bash
-   git clone git@github.com:Austin37AF/nix-config.git ~/nix
+   mkdir -p ~/homelab
+   git clone git@github.com:Austin37AF/nix-config.git ~/homelab/nix
    ```
 
 3. Build and switch:
    ```bash
-   nix run nix-darwin -- switch --flake ~/nix#austin-m5-pro
+   nix run nix-darwin -- switch --flake ~/homelab/nix#austin-m5-pro
    ```
 
 4. Subsequent rebuilds:
@@ -142,3 +143,8 @@ nix-collect-garbage -d
 
 - Google Chrome
 - Slack
+
+## Related Repos
+
+- [heimdall](https://github.com/Austin37AF/heimdall) - CLI tool for cluster management
+- [k8s-gitops](https://github.com/Austin37AF/k8s-gitops) - GitOps repository for cluster apps

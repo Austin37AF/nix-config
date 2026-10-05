@@ -1,6 +1,7 @@
 { ... }: {
   homebrew = {
     enable = true;
+    enableZshIntegration = true;  # brew shellenv (replaces the old hand-written ~/.zprofile)
     onActivation.cleanup = "zap";
     taps = [];
     brews = [
@@ -13,7 +14,7 @@
       "raycast"
       "slack"
       "stats"
-      "windsurf"
+      "devin-desktop"  # formerly "windsurf"
     ];
   };
 }

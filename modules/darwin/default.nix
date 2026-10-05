@@ -41,7 +41,7 @@ in
         "/Applications/Google Chrome.app"
         "/Applications/Slack.app"
         "/Applications/Docker.app"
-        "/Applications/Windsurf.app"
+        "/Applications/Devin.app"
         "/System/Applications/Utilities/Terminal.app"
         "/System/Applications/Notes.app"
       ];

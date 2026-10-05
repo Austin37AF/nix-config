@@ -21,7 +21,7 @@ in
   programs.zed-editor = {
     enable = true;
     # macOS: installed via Homebrew cask (modules/local-ai/darwin.nix)
-    package = lib.mkIf pkgs.stdenv.isDarwin null;
+    package = lib.mkIf pkgs.stdenv.hostPlatform.isDarwin null;
     extensions = [ "nix" ];
     userSettings = {
       telemetry = { diagnostics = false; metrics = false; };

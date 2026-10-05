@@ -1,7 +1,7 @@
 # Zed configured for pair programming and PR review against local LM Studio (Qwen3.6-27B)
 #
 # One-time model download (after launching LM Studio once to bootstrap `lms`):
-#   lms get qwen/qwen3.6-27b     # choose the MLX 6-bit variant when prompted
+#   lms get qwen/qwen3.6-27b --mlx -a   # -a forces the quant picker; choose 6bit
 #   lms server start
 # In LM Studio, load the model with a context length of 65536 (default is 4096).
 #

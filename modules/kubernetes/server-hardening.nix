@@ -53,10 +53,10 @@
   };
 
   # Journal size limits (prevent log disk fill)
-  services.journald.extraConfig = ''
-    SystemMaxUse=500M
-    MaxRetentionSec=1month
-  '';
+  services.journald.settings.Journal = {
+    SystemMaxUse = "500M";
+    MaxRetentionSec = "1month";
+  };
 
   # Enable persistent logging (survives reboots for debugging)
   services.journald.storage = "persistent";

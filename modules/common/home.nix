@@ -1,13 +1,10 @@
 { pkgs, lib, ... }:
 let
   env = import ./env.nix;
-  isDarwin = pkgs.stdenv.isDarwin;
 in
 {
-  home.username = if isDarwin then "austin.mills" else "austinm";
-  home.homeDirectory = lib.mkForce (if isDarwin 
-    then "/Users/austin.mills" 
-    else "/home/austinm");
+  home.username = "austin.mills";
+  home.homeDirectory = lib.mkForce "/Users/austin.mills";
   home.stateVersion = "24.05";
   
   # Packages
@@ -154,11 +151,4 @@ fi
       push.autoSetupRemote = true;
     };
   };
-
-  # VSCode (NixOS only - Darwin uses Homebrew cask)
-  # Install extensions manually: Ctrl+Shift+X -> search "Gemini"
-  programs.vscode = lib.mkIf (!isDarwin) {
-    enable = true;
-  };
-  
 }

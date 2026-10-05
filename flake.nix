@@ -30,10 +30,9 @@
       url = "github:homebrew/homebrew-cask";
       flake = false;
     };
-    nix-vscode-extensions.url = "github:nix-community/nix-vscode-extensions";
   };
 
-  outputs = inputs@{ self, nix-darwin, nixpkgs, nix-homebrew, home-manager, homebrew-core, homebrew-cask, nix-vscode-extensions, nixos-generators, sops-nix, deploy-rs }:
+  outputs = inputs@{ self, nix-darwin, nixpkgs, nix-homebrew, home-manager, homebrew-core, homebrew-cask, nixos-generators, sops-nix, deploy-rs }:
   let
     # Darwin pkgs
     darwinPkgs = import nixpkgs {
@@ -140,7 +139,7 @@
               
               # Sops secrets configuration
               sops = {
-                defaultSopsFile = ../../secrets/k8s.yaml;
+                defaultSopsFile = ./secrets/k8s.yaml;
                 age.sshKeyPaths = [ "/etc/ssh/ssh_host_ed25519_key" ];
                 secrets.k3s-token = {};
               };
@@ -172,28 +171,6 @@
         ];
       };
     in {
-      # Linux laptop
-      "nixos-laptop" = nixpkgs.lib.nixosSystem {
-        system = "x86_64-linux";
-        modules = [
-          ./modules/nixos/hardware-configuration.nix
-          ./modules/nixos/default.nix
-          ./modules/nixos/zsh.nix
-          ./modules/local-ai/nixos.nix
-          home-manager.nixosModules.home-manager
-          {
-            home-manager.useGlobalPkgs = true;
-            home-manager.useUserPackages = true;
-            home-manager.users.austinm = { ... }: {
-              imports = [ ./modules/common/home.nix ./modules/local-ai/home.nix ];
-              programs.vscode.extensions = [
-                nix-vscode-extensions.extensions.x86_64-linux.vscode-marketplace.google.geminicodeassist
-              ];
-            };
-          }
-        ];
-      };
-      
       # ============================================
       # Kubernetes Cluster Nodes (Mac Minis)
       # ============================================

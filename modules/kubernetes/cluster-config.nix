@@ -15,7 +15,7 @@
   # Add your public key for passwordless SSH access
   # Get it with: cat ~/.ssh/id_ed25519.pub
   sshPublicKeys = [
-    "ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIМ1Vs9gl8joXAK72/nwL6cETdabfj/Tso335iYLpnUJd austin-m5-pro"
+    "ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIM1Vs9gl8joXAK72/nwL6cETdabfj/Tso335iYLpnUJd austin-m5-pro"
   ];
 
   # ============================================

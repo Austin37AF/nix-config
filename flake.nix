@@ -69,6 +69,7 @@
         ./modules/darwin/default.nix
         ./modules/darwin/homebrew.nix
         ./modules/darwin/zsh.nix
+        ./modules/local-ai/darwin.nix
         
         { system.configurationRevision = self.rev or self.dirtyRev or null; }
         
@@ -99,6 +100,7 @@
             imports = [
               ./modules/common/home.nix
               ./modules/darwin/home.nix
+              ./modules/local-ai/home.nix
             ];
           };
         }
@@ -177,12 +179,13 @@
           ./modules/nixos/hardware-configuration.nix
           ./modules/nixos/default.nix
           ./modules/nixos/zsh.nix
+          ./modules/local-ai/nixos.nix
           home-manager.nixosModules.home-manager
           {
             home-manager.useGlobalPkgs = true;
             home-manager.useUserPackages = true;
             home-manager.users.austinm = { ... }: {
-              imports = [ ./modules/common/home.nix ];
+              imports = [ ./modules/common/home.nix ./modules/local-ai/home.nix ];
               programs.vscode.extensions = [
                 nix-vscode-extensions.extensions.x86_64-linux.vscode-marketplace.google.geminicodeassist
               ];

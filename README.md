@@ -12,6 +12,7 @@ Declarative macOS system configuration using nix-darwin, nix-homebrew, and Home 
 │   ├── homebrew.nix       # Homebrew brews and casks
 │   ├── zsh.nix            # Shell configuration
 │   ├── home.nix           # Home Manager (git, powerline-go, Windsurf settings)
+│   ├── local-ai/          # LM Studio + Zed (Qwen3.6-27B, PR review skill) + nvtop; not on k8s nodes
 │   ├── devshell.nix       # Dev shell for projects without Devbox
 │   ├── packages.nix       # Shared package lists (cli, dev, fonts, gui)
 │   └── env.nix            # Shared env vars, aliases, powerline config

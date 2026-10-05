@@ -24,6 +24,7 @@
     (pkgs.python3.withPackages (ps: [ ps.pip ]))
     pkgs.opentofu
     pkgs.powerline-go
+    pkgs.act
   ];
   
   # Fonts

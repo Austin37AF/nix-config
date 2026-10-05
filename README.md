@@ -89,13 +89,13 @@ exit
 - Custom scripts in `~/.local/bin`
 
 ### Dev Shell (`devshell.nix`)
-- Includes all CLI tools plus: go, python3, opentofu, powerline-go
+- Includes all CLI tools plus: go, python3, opentofu, powerline-go, act
 - Shows ❄️ indicator in prompt
 - Enter with `dev` alias
 
 ### Shared Packages (`packages.nix`)
 - **cli**: awscli, kubectl, helm, k9s, gh, pre-commit, gcloud (with gke-auth-plugin), jq, yq, nixd
-- **dev**: go, python3, opentofu, powerline-go
+- **dev**: go, python3, opentofu, powerline-go, act
 - **fonts**: JetBrainsMono Nerd Font (for powerline-go icons)
 - **gui**: vim, mkalias, obsidian, alt-tab, hidden-bar, rectangle, stats, the-unarchiver
 

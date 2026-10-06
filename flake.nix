@@ -30,9 +30,13 @@
       url = "github:homebrew/homebrew-cask";
       flake = false;
     };
+
+    # Homelab CLI (cluster ops, `heimdall ai` for the local LLM server)
+    heimdall.url = "git+ssh://git@github.com/Austin37AF/heimdall";
+    heimdall.inputs.nixpkgs.follows = "nixpkgs";
   };
 
-  outputs = inputs@{ self, nix-darwin, nixpkgs, nix-homebrew, home-manager, homebrew-core, homebrew-cask, nixos-generators, sops-nix, deploy-rs }:
+  outputs = inputs@{ self, nix-darwin, nixpkgs, nix-homebrew, home-manager, homebrew-core, homebrew-cask, nixos-generators, sops-nix, deploy-rs, heimdall }:
   let
     # Darwin pkgs
     darwinPkgs = import nixpkgs {
@@ -71,6 +75,7 @@
         ./modules/local-ai/darwin.nix
         
         { system.configurationRevision = self.rev or self.dirtyRev or null; }
+        { environment.systemPackages = [ heimdall.packages.aarch64-darwin.default ]; }
         
         nix-homebrew.darwinModules.nix-homebrew
         {

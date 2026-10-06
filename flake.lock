@@ -55,6 +55,26 @@
         "type": "github"
       }
     },
+    "heimdall": {
+      "inputs": {
+        "nixpkgs": [
+          "nixpkgs"
+        ]
+      },
+      "locked": {
+        "lastModified": 1791298048,
+        "narHash": "sha256-hBRgwaqTs5Wl9OfqQUrLT17lFows983xHO51HN+kR9s=",
+        "ref": "refs/heads/main",
+        "rev": "b98abdf10c5c7755595813806b8e51ccc2dda5e4",
+        "revCount": 11,
+        "type": "git",
+        "url": "ssh://git@github.com/Austin37AF/heimdall"
+      },
+      "original": {
+        "type": "git",
+        "url": "ssh://git@github.com/Austin37AF/heimdall"
+      }
+    },
     "home-manager": {
       "inputs": {
         "nixpkgs": [
@@ -201,6 +221,7 @@
     "root": {
       "inputs": {
         "deploy-rs": "deploy-rs",
+        "heimdall": "heimdall",
         "home-manager": "home-manager",
         "homebrew-cask": "homebrew-cask",
         "homebrew-core": "homebrew-core",

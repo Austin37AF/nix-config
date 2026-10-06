@@ -2,8 +2,9 @@
 #
 # One-time model download (after launching LM Studio once to bootstrap `lms`):
 #   lms get qwen/qwen3.6-27b --mlx --select   # --select opens the quant picker; choose 6bit
-#   lms server start
-# In LM Studio, load the model with a context length of 65536 (default is 4096).
+#
+# Day to day (heimdall loads the model with the context Zed expects):
+#   heimdall ai up | down | status
 #
 # PR review: switch the Agent panel to the "Review" profile and run /pr-review
 # (optionally with a PR number, e.g. "/pr-review 123").

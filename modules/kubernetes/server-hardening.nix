@@ -19,9 +19,9 @@
   boot.kernelParams = [ "panic=10" ];
   
   # Watchdog - reboot if system hangs
-  systemd.watchdog = {
-    runtimeTime = "30s";
-    rebootTime = "10m";
+  systemd.settings.Manager = {
+    RuntimeWatchdogSec = "30s";
+    RebootWatchdogSec = "10m";
   };
 
   # Automatic updates from your flake
@@ -53,13 +53,12 @@
   };
 
   # Journal size limits (prevent log disk fill)
+  # Persistent storage survives reboots for debugging
   services.journald.settings.Journal = {
     SystemMaxUse = "500M";
     MaxRetentionSec = "1month";
+    Storage = "persistent";
   };
-
-  # Enable persistent logging (survives reboots for debugging)
-  services.journald.storage = "persistent";
 
   # SMART monitoring for disk health
   services.smartd = {

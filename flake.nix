@@ -21,6 +21,10 @@
     deploy-rs.url = "github:serokell/deploy-rs";
     deploy-rs.inputs.nixpkgs.follows = "nixpkgs";
 
+    # Declarative disk partitioning for K8s nodes (used by nixos-anywhere)
+    disko.url = "github:nix-community/disko/latest";
+    disko.inputs.nixpkgs.follows = "nixpkgs";
+
     # Declarative tap management (Darwin only)
     homebrew-core = {
       url = "github:homebrew/homebrew-core";
@@ -36,7 +40,7 @@
     heimdall.inputs.nixpkgs.follows = "nixpkgs";
   };
 
-  outputs = inputs@{ self, nix-darwin, nixpkgs, nix-homebrew, home-manager, homebrew-core, homebrew-cask, nixos-generators, sops-nix, deploy-rs, heimdall }:
+  outputs = inputs@{ self, nix-darwin, nixpkgs, nix-homebrew, home-manager, homebrew-core, homebrew-cask, nixos-generators, sops-nix, deploy-rs, heimdall, disko }:
   let
     # Darwin pkgs
     darwinPkgs = import nixpkgs {
@@ -136,6 +140,11 @@
         system = "x86_64-linux";
         modules = [
           ./modules/kubernetes/k8s-base.nix
+          ./modules/kubernetes/hardware.nix
+          disko.nixosModules.disko
+          (import ./modules/kubernetes/disko.nix {
+            device = clusterCfg.nodes.${name}.disk or clusterCfg.defaultDisk;
+          })
           sops-nix.nixosModules.sops
           ({ lib, config, ... }: 
             let 

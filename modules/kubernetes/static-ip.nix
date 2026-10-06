@@ -61,7 +61,7 @@ in
     # Ensure resolved uses our DNS servers
     services.resolved = {
       enable = true;
-      fallbackDns = cfg.nameservers;
+      settings.Resolve.FallbackDNS = cfg.nameservers;
     };
   };
 }

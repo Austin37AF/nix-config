@@ -4,7 +4,7 @@ NixOS-based k3s cluster with 3 control plane nodes + 1 worker (HA setup).
 
 ## Prerequisites
 
-- 4 **Intel** Mac Minis (2010-2020 models work great; Apple Silicon M1/M2/M3 not supported)
+- 4x Mac mini Late 2014 (A1347, 16GB RAM, 500GB disk). Hardware settings are in `hardware.nix`.
 - USB drive for installer ISO
 - Network with DHCP (for initial boot) and reserved IPs for nodes
 
@@ -81,6 +81,17 @@ diskutil eject /dev/diskN
 Boot each Mac Mini from the USB. It will get a DHCP IP.
 
 **Find the IP:** Check your router's DHCP leases, or connect a monitor and run `ip addr`.
+
+**Check the disk and NIC first.** nixos-anywhere **wipes** the disk set in `cluster-config.nix`
+(`defaultDisk = "/dev/sda"`, or a per-node `disk`) and partitions it with `disko.nix`
+(512M EFI + ext4 root). On the booted installer:
+
+```bash
+ssh root@<IP> lsblk -o NAME,SIZE,MODEL,TRAN   # internal ~500G SATA disk, not the USB stick
+ssh root@<IP> ip -br link                     # ethernet name for network.interface
+```
+
+If the internal disk isn't `/dev/sda`, set `disk = "/dev/sdX";` on that node.
 
 **Deploy in order** (server-1 must be first):
 
@@ -234,6 +245,8 @@ modules/kubernetes/
 ├── cluster-config.nix   # All cluster settings (IPs, token, SSH keys)
 ├── k8s-node.nix         # k3s service module
 ├── k8s-base.nix         # Base NixOS config for nodes
+├── hardware.nix         # Mac mini Late 2014 kernel modules/firmware
+├── disko.nix            # Disk layout (GPT, EFI, ext4) used by nixos-anywhere
 ├── static-ip.nix        # Static IP configuration
 ├── server-hardening.nix # Reliability & security settings
 └── iso-k8s.nix          # Installer ISO configuration

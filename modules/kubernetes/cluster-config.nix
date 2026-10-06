@@ -83,13 +83,4 @@
       "k8s.local"  # Optional: add DNS name if you set one up
     ];
   };
-
-  # ============================================
-  # Flake URI for Installation & Auto-Updates
-  # ============================================
-  # Used by:
-  #   - ISO installer to fetch your config
-  #   - Auto-upgrade service to pull updates
-  # Change to your repo URL after pushing
-  flakeUri = "github:Austin37AF/nix-config";
 }

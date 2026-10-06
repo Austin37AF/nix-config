@@ -237,6 +237,7 @@
       user = "root";
       sshOpts = [ "-o" "StrictHostKeyChecking=no" ];
       fastConnection = true;
+      remoteBuild = true;  # Build on the x86_64 nodes; the Mac can't build x86_64-linux
       autoRollback = true;
       magicRollback = true;
       

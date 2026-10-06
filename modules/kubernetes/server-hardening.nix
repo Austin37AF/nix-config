@@ -24,20 +24,8 @@
     RebootWatchdogSec = "10m";
   };
 
-  # Automatic updates from your flake
-  # Pulls latest config daily, reboots if needed during maintenance window
-  system.autoUpgrade = {
-    enable = true;
-    flake = (import ./cluster-config.nix).flakeUri;
-    flags = [ "--update-input" "nixpkgs" ];
-    dates = "04:00";  # Run at 4 AM
-    randomizedDelaySec = "45min";  # Stagger updates across nodes
-    allowReboot = true;
-    rebootWindow = {
-      lower = "04:00";
-      upper = "06:00";
-    };
-  };
+  # Updates are pushed with deploy-rs (`nix run .#deploy`) from the pinned flake.lock.
+  # No system.autoUpgrade: the repo is private and per-node nixpkgs bumps would drift.
 
   # Garbage collection to prevent disk fill
   nix.gc = {

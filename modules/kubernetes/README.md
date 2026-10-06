@@ -32,11 +32,27 @@ cat ~/.config/sops/age/keys.txt | grep "public key"
 # Update .sops.yaml with your public key (replace the placeholder)
 vim .sops.yaml
 
+# macOS: sops looks in ~/Library/Application Support/sops/age/ by default
+export SOPS_AGE_KEY_FILE=~/.config/sops/age/keys.txt
+
 # Create the encrypted secrets file
 sops secrets/k8s.yaml
 # In the editor, add:
 #   k3s-token: "<output of: openssl rand -hex 32>"
 # Save and exit - file is now encrypted
+```
+
+**Node host keys are pre-generated.** Each node's SSH host key lives in
+`secrets/host-keys.yaml` (encrypted to your admin key only). Their age
+equivalents are already recipients of `secrets/k8s.yaml` in `.sops.yaml`, and
+`scripts/install-node.sh` installs the key, so nodes can decrypt the k3s token
+on first boot. To add or rotate a node key:
+
+```bash
+ssh-keygen -t ed25519 -N "" -C root@<node> -f /tmp/<node>
+sops secrets/host-keys.yaml                      # add "<node>: |" with the private key
+ssh-to-age < /tmp/<node>.pub                     # add as a recipient in .sops.yaml
+sops updatekeys secrets/k8s.yaml && rm /tmp/<node>*
 ```
 
 ### 3. Configure the Cluster
@@ -82,52 +98,34 @@ Boot each Mac Mini from the USB. It will get a DHCP IP.
 
 **Find the IP:** Check your router's DHCP leases, or connect a monitor and run `ip addr`.
 
-**Check the disk and NIC first.** nixos-anywhere **wipes** the disk set in `cluster-config.nix`
-(`defaultDisk = "/dev/sda"`, or a per-node `disk`) and partitions it with `disko.nix`
-(512M EFI + ext4 root). On the booted installer:
+**Check the NIC first** (once, on any node), and set `network.interface` in `cluster-config.nix`:
 
 ```bash
-ssh root@<IP> lsblk -o NAME,SIZE,MODEL,TRAN   # internal ~500G SATA disk, not the USB stick
-ssh root@<IP> ip -br link                     # ethernet name for network.interface
+ssh root@<IP> ip -br link
 ```
 
-If the internal disk isn't `/dev/sda`, set `disk = "/dev/sdX";` on that node.
-
-**Deploy in order** (server-1 must be first):
+**Install in order** (server-1 must be first). The script shows the target's disks, asks you
+to confirm, then **wipes** the disk from `cluster-config.nix` (`defaultDisk = "/dev/sda"`, or a
+per-node `disk`), partitions it with `disko.nix` (512M EFI + ext4 root), installs the node's
+SSH host key, and builds on the target (this Mac can't build x86_64-linux):
 
 ```bash
-# Control plane (first node initializes the cluster)
-nix run github:nix-community/nixos-anywhere -- --flake .#k8s-server-1 root@<IP>
-
+./scripts/install-node.sh k8s-server-1 <IP>
 # Wait for server-1 to reboot and k3s to start (~2 min), then:
-nix run github:nix-community/nixos-anywhere -- --flake .#k8s-server-2 root@<IP>
-nix run github:nix-community/nixos-anywhere -- --flake .#k8s-server-3 root@<IP>
-
-# Worker node (after all servers are up)
-nix run github:nix-community/nixos-anywhere -- --flake .#k8s-agent-1 root@<IP>
+./scripts/install-node.sh k8s-server-2 <IP>
+./scripts/install-node.sh k8s-server-3 <IP>
+./scripts/install-node.sh k8s-agent-1  <IP>
 ```
 
-### 7. Add Node Host Keys to Sops (Important!)
+If the internal ~500G disk isn't `/dev/sda` in the script's disk list, abort and set
+`disk = "/dev/sdX";` on that node.
 
-After initial deployment, add each node's SSH key so they can decrypt secrets:
-
-```bash
-# Get each node's age-compatible public key
-ssh-keyscan -t ed25519 192.168.1.100 2>/dev/null | ssh-to-age
-ssh-keyscan -t ed25519 192.168.1.101 2>/dev/null | ssh-to-age
-ssh-keyscan -t ed25519 192.168.1.102 2>/dev/null | ssh-to-age
-ssh-keyscan -t ed25519 192.168.1.103 2>/dev/null | ssh-to-age
-
-# Add these keys to .sops.yaml, then re-encrypt secrets:
-sops updatekeys secrets/k8s.yaml
-```
-
-### 8. Verify Cluster
+### 7. Verify Cluster
 
 SSH into any server node:
 
 ```bash
-ssh k8sadmin@192.168.1.100
+ssh k8sadmin@10.17.17.100
 
 # Check nodes
 sudo k3s kubectl get nodes
@@ -146,7 +144,7 @@ sudo k3s kubectl get nodes
 │                     k3s HA Cluster                          │
 ├───────────────┬───────────────┬───────────────┬────────────┤
 │  k8s-server-1 │  k8s-server-2 │  k8s-server-3 │ k8s-agent-1│
-│  192.168.1.100│  192.168.1.101│  192.168.1.102│ 192.168.1.103
+│  10.17.17.100│  10.17.17.101│  10.17.17.102│ 10.17.17.103
 ├───────────────┼───────────────┼───────────────┼────────────┤
 │  etcd         │  etcd         │  etcd         │            │
 │  API server   │  API server   │  API server   │            │
@@ -162,7 +160,7 @@ sudo k3s kubectl get nodes
 ### SSH Access
 
 ```bash
-ssh k8sadmin@192.168.1.100  # or any node IP
+ssh k8sadmin@10.17.17.100  # or any node IP
 ```
 
 ### kubectl from Your Mac
@@ -170,10 +168,10 @@ ssh k8sadmin@192.168.1.100  # or any node IP
 Copy the kubeconfig from a server:
 
 ```bash
-scp k8sadmin@192.168.1.100:/etc/rancher/k3s/k3s.yaml ~/.kube/config
+scp k8sadmin@10.17.17.100:/etc/rancher/k3s/k3s.yaml ~/.kube/config
 
 # Update the server address
-sed -i '' 's/127.0.0.1/192.168.1.100/' ~/.kube/config
+sed -i '' 's/127.0.0.1/10.17.17.100/' ~/.kube/config
 
 kubectl get nodes
 ```
@@ -198,16 +196,17 @@ nix run .#deploy -- --skip-checks
 - **Magic rollback** - If you lose SSH connection, node reverts after 60s
 - **Parallel deployment** - Updates all nodes simultaneously
 
-Nodes also auto-update at 4 AM from your GitHub repo.
+deploy-rs builds on the nodes themselves (`remoteBuild`). There's no automatic upgrade:
+to update, run `nix flake update` (or bump single inputs), then `nix run .#deploy`.
 
 ### Check Node Status
 
 ```bash
 # System logs
-ssh k8sadmin@192.168.1.100 "journalctl -u k3s -f"
+ssh k8sadmin@10.17.17.100 "journalctl -u k3s -f"
 
 # k3s status
-ssh k8sadmin@192.168.1.100 "sudo systemctl status k3s"
+ssh k8sadmin@10.17.17.100 "sudo systemctl status k3s"
 ```
 
 ## Troubleshooting
@@ -215,7 +214,7 @@ ssh k8sadmin@192.168.1.100 "sudo systemctl status k3s"
 ### Node won't join cluster
 
 1. Check token matches: `cat /var/lib/k3s/token`
-2. Verify network: `ping 192.168.1.100`
+2. Verify network: `ping 10.17.17.100`
 3. Check k3s logs: `journalctl -u k3s -e`
 
 ### Find network interface name
@@ -242,7 +241,7 @@ Then redeploy with nixos-anywhere.
 ```
 modules/kubernetes/
 ├── README.md            # This file
-├── cluster-config.nix   # All cluster settings (IPs, token, SSH keys)
+├── cluster-config.nix   # All cluster settings (IPs, disk, SSH keys)
 ├── k8s-node.nix         # k3s service module
 ├── k8s-base.nix         # Base NixOS config for nodes
 ├── hardware.nix         # Mac mini Late 2014 kernel modules/firmware

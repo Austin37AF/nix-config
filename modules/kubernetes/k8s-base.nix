@@ -8,6 +8,8 @@
 
   # Nix settings
   nix.settings.experimental-features = [ "nix-command" "flakes" ];
+  # deploy-rs remoteBuild copies unsigned derivations as k8sadmin and builds them here
+  nix.settings.trusted-users = [ "root" "k8sadmin" ];
 
   # Allow unfree packages
   nixpkgs.config.allowUnfree = true;

@@ -228,9 +228,11 @@
     # Deploy-rs Configuration
     # ============================================
     # 
-    # Deploy all K8s nodes:  nix run .#deploy
-    # Deploy one node:       nix run .#deploy .#k8s-server-1
-    # Deploy with checks:    nix run .#deploy -- --skip-checks
+    # Deploy all K8s nodes:  nix run .#deploy        (or: heimdall cluster update)
+    # Deploy one node:       nix run .#deploy -- .#k8s-server-1
+    # Skip checks:           nix run .#deploy -- --skip-checks
+
+    apps.aarch64-darwin.deploy = deploy-rs.apps.aarch64-darwin.default;
     
     deploy = {
       sshUser = "k8sadmin";
@@ -257,7 +259,7 @@
       };
     };
 
-    # Deploy-rs checks
-    checks = builtins.mapAttrs (system: deployLib: deployLib.deployChecks self.deploy) deploy-rs.lib;
+    # Deploy-rs checks (nodes are x86_64-linux; other systems would try to build their closures)
+    checks.x86_64-linux = deploy-rs.lib.x86_64-linux.deployChecks self.deploy;
   };
 }

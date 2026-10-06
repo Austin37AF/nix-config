@@ -182,23 +182,29 @@ kubectl get nodes
 
 ### Update Cluster Configuration (deploy-rs)
 
-After initial setup, use deploy-rs for updates (like Ansible, but for NixOS):
+After initial setup, updates are pushed over SSH with deploy-rs (like Ansible, but for NixOS).
+The easy way is heimdall:
 
 ```bash
-# Deploy to ALL nodes at once
-nix run .#deploy
+nix flake update nixpkgs             # optional: pick up new packages/kernel
+heimdall cluster update --dry-run    # build on the nodes, show what would change
+heimdall cluster update              # deploy to all nodes (or name specific nodes)
+heimdall cluster update --reboot     # deploy, then rolling reboot of nodes with a new kernel
+heimdall cluster reboot-needed       # check which nodes are on an old kernel
+```
 
-# Deploy to a single node
-nix run .#deploy .#k8s-server-1
+Or deploy-rs directly:
 
-# Deploy without checks (faster)
-nix run .#deploy -- --skip-checks
+```bash
+nix run .#deploy                       # all nodes
+nix run .#deploy -- .#k8s-server-1     # one node
+nix run .#deploy -- --skip-checks      # skip flake checks
 ```
 
 **Features:**
 - **Auto-rollback** - If deployment fails, automatically reverts
 - **Magic rollback** - If you lose SSH connection, node reverts after 60s
-- **Parallel deployment** - Updates all nodes simultaneously
+- **Rolling reboots** (heimdall `--reboot`) - drain, reboot, wait for Ready, uncordon, one node at a time
 
 deploy-rs builds on the nodes themselves (`remoteBuild`). There's no automatic upgrade:
 to update, run `nix flake update` (or bump single inputs), then `nix run .#deploy`.

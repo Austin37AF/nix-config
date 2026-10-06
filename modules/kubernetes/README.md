@@ -64,13 +64,17 @@ Edit `cluster-config.nix`:
 - `network.interface` - NIC name (usually `enp0s3` or `eth0`)
 - `nodes.*.ip` - Static IPs for each node
 
-### 4. Build the Installer ISO
+### 4. Get the Installer ISO
+
+GitHub Actions builds the ISO on every push touching the cluster config and publishes it to
+the rolling `k8s-installer` release (a Mac can't build x86_64-linux ISOs locally). The flash
+script below downloads it automatically, or:
 
 ```bash
-nix build .#k8s-installer-iso
+gh release download k8s-installer -R Austin37AF/nix-config -p k8s-installer.iso
 ```
 
-The ISO will be at `./result/iso/nixos-*.iso`
+Rebuild the ISO whenever `cluster-config.nix` changes (it bakes in your SSH key).
 
 ### 5. Create Bootable USB
 

@@ -1,30 +1,25 @@
 #!/usr/bin/env bash
 set -euo pipefail
 
-# Flash NixOS ISO to USB drive safely
+# Flash the K8s installer ISO to a USB drive safely
 # Usage: ./scripts/flash-usb.sh [iso-path]
+# Without a path, downloads the latest CI build from the `k8s-installer` release.
 
 ISO_PATH="${1:-}"
+cd "$(dirname "$0")/.."
 
-# Find ISO file
-if [[ -n "$ISO_PATH" && -f "$ISO_PATH" ]]; then
+if [[ -n "$ISO_PATH" ]]; then
     ISO_FILE="$ISO_PATH"
-elif [[ -d "./iso" ]]; then
-    ISO_FILE=$(find ./iso -name "nixos-*.iso" -type f 2>/dev/null | head -1)
-elif [[ -d "./result/iso" ]]; then
-    ISO_FILE=$(find ./result/iso -name "nixos-*.iso" -type f 2>/dev/null | head -1)
 else
-    # Check common download locations
-    ISO_FILE=$(find ~/Downloads -name "nixos-*.iso" -type f -mtime -1 2>/dev/null | head -1)
+    ISO_FILE="./iso/k8s-installer.iso"
+    mkdir -p ./iso
+    echo "⬇️  Downloading latest installer ISO from GitHub release..."
+    gh release download k8s-installer -R Austin37AF/nix-config -p k8s-installer.iso -D ./iso --clobber
+    gh release view k8s-installer -R Austin37AF/nix-config --json body -q .body
 fi
 
-if [[ -z "$ISO_FILE" || ! -f "$ISO_FILE" ]]; then
-    echo "❌ ISO not found!"
-    echo ""
-    echo "Options:"
-    echo "  1. Build locally:    nix build .#k8s-installer-iso"
-    echo "  2. Download from:    https://github.com/Austin37AF/nix-config/actions"
-    echo "  3. Specify path:     ./scripts/flash-usb.sh /path/to/nixos.iso"
+if [[ ! -f "$ISO_FILE" ]]; then
+    echo "❌ ISO not found: $ISO_FILE"
     exit 1
 fi
 

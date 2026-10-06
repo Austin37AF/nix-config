@@ -13,6 +13,8 @@ on:
 jobs:
   build-iso:
     runs-on: ubuntu-latest
+    permissions:
+      contents: write  # publish the ISO to the rolling `k8s-installer` release
     steps:
       - name: Checkout
         uses: actions/checkout@v4
@@ -35,9 +37,14 @@ jobs:
         run: |
           nix build .#packages.x86_64-linux.k8s-installer-iso --print-build-logs
 
-      - name: Upload ISO
-        uses: actions/upload-artifact@v4
-        with:
-          name: k8s-installer-iso
-          path: result/iso/*.iso
-          retention-days: 3
+      # Release assets don't count against the (small) Actions artifact quota.
+      # Download: gh release download k8s-installer -R Austin37AF/nix-config
+      - name: Publish ISO to release
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          cp result/iso/*.iso k8s-installer.iso
+          gh release view k8s-installer >/dev/null 2>&1 || \
+            gh release create k8s-installer --prerelease --title "K8s installer ISO" --notes "Rolling build"
+          gh release upload k8s-installer k8s-installer.iso --clobber
+          gh release edit k8s-installer --notes "Built from ${GITHUB_SHA} on $(date -u +%F)"

@@ -83,11 +83,11 @@
         ]
       },
       "locked": {
-        "lastModified": 1791298048,
-        "narHash": "sha256-hBRgwaqTs5Wl9OfqQUrLT17lFows983xHO51HN+kR9s=",
+        "lastModified": 1791302073,
+        "narHash": "sha256-ytlVBJ+KL5HCNnHTbZmYCcBrji4SOlerZKfmkdR7qRo=",
         "ref": "refs/heads/main",
-        "rev": "b98abdf10c5c7755595813806b8e51ccc2dda5e4",
-        "revCount": 11,
+        "rev": "4e83fff89d293b32d02ea0b12707b6c482cccbea",
+        "revCount": 12,
         "type": "git",
         "url": "ssh://git@github.com/Austin37AF/heimdall"
       },

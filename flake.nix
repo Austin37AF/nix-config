@@ -67,10 +67,25 @@
     #   austin-m5-pro-home  - Personal mode (no work tools)
     #
     # Usage:
-    #   rebuild                                              # Work mode (default)
-    #   sudo darwin-rebuild switch --flake ~/nix#austin-m5-pro-home  # Personal mode
+    #   rebuild        # Work mode (default)
+    #   rebuild-home   # Personal mode
+    #
+    # New machine: add it to `machines`, add its config(s) below. See README "Bootstrap".
     #
     darwinConfigurations = let
+      # Per-machine settings, passed to modules as `machine`
+      #   name:    default darwinConfiguration for `rebuild`
+      #   sshKey:  this machine's GitHub SSH key (~/.ssh/<sshKey>), one key per machine
+      #   hasHome: also has a `<name>-home` config (`rebuild-home`)
+      machines = {
+        austin-m5-pro = { name = "austin-m5-pro"; sshKey = "austin-m5-pro"; hasHome = true; };
+      };
+
+      mkDarwin = machine: extraModules: nix-darwin.lib.darwinSystem {
+        specialArgs = { inherit machine; };
+        modules = baseModules ++ extraModules;
+      };
+
       # Base modules shared by all Darwin configs
       baseModules = [
         ./modules/darwin/default.nix
@@ -101,10 +116,11 @@
         })
         
         home-manager.darwinModules.home-manager
-        {
+        ({ machine, ... }: {
           home-manager.useGlobalPkgs = true;
           home-manager.useUserPackages = true;
           home-manager.backupFileExtension = "hm-backup";
+          home-manager.extraSpecialArgs = { inherit machine; };
           home-manager.users."austin.mills" = { ... }: {
             imports = [
               ./modules/common/home.nix
@@ -112,21 +128,17 @@
               ./modules/local-ai/home.nix
             ];
           };
-        }
+        })
       ];
       
       # Work-specific modules
       workModules = [ ./modules/hosts/work ];
     in {
       # Work machine (default)
-      "austin-m5-pro" = nix-darwin.lib.darwinSystem {
-        modules = baseModules ++ workModules;
-      };
+      "austin-m5-pro" = mkDarwin machines.austin-m5-pro workModules;
       
       # Personal mode (no Zscaler, gimme-aws-creds, etc.)
-      "austin-m5-pro-home" = nix-darwin.lib.darwinSystem {
-        modules = baseModules;
-      };
+      "austin-m5-pro-home" = mkDarwin machines.austin-m5-pro [ ];
     };
 
     # ============================================

@@ -1,5 +1,5 @@
 # Darwin-specific zsh additions
-{ ... }:
+{ lib, machine, ... }:
 let
   env = import ../common/env.nix;
 in
@@ -22,7 +22,10 @@ in
       
       # Zsh-only aliases
       # Touch GitHub first so AddKeysToAgent loads the key root will use via SSH_AUTH_SOCK
-      alias rebuild="ssh -o BatchMode=yes -T git@github.com >/dev/null 2>&1; sudo darwin-rebuild switch --flake ~/homelab/nix#austin-m5-pro"
+      alias rebuild="ssh -o BatchMode=yes -T git@github.com >/dev/null 2>&1; sudo darwin-rebuild switch --flake ~/homelab/nix#${machine.name}"
+      ${lib.optionalString (machine.hasHome or false) ''
+      alias rebuild-home="ssh -o BatchMode=yes -T git@github.com >/dev/null 2>&1; sudo darwin-rebuild switch --flake ~/homelab/nix#${machine.name}-home"
+      ''}
       alias dev="nix develop ~/homelab/nix"
       
       # Direnv hook (silenced, only if .envrc exists)

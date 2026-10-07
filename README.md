@@ -21,7 +21,7 @@ Declarative macOS system configuration using nix-darwin, nix-homebrew, and Home 
 ## Quick Commands
 
 ```bash
-# Rebuild system configuration
+# Rebuild system configuration (rebuild-home for personal mode)
 rebuild
 
 # Enter dev shell manually (go, python, opentofu, jq, yq)
@@ -36,26 +36,50 @@ exit
 
 ## Bootstrap on a New Machine
 
+Each Mac gets its **own** GitHub SSH key (revocable per device) rather than sharing one via
+SOPS. SOPS would only move the problem: decrypting needs an age key copied over by hand.
+
 1. Install Nix:
    ```bash
    curl -L https://nixos.org/nix/install | sh
    ```
 
-2. Clone this repo:
+2. Create this machine's GitHub key and register it (browser login, no key needed yet):
+   ```bash
+   KEY=<machine-name>   # e.g. austin-mini; becomes machines.<name>.sshKey
+   ssh-keygen -t ed25519 -C "$KEY" -f ~/.ssh/$KEY
+   nix shell nixpkgs#gh -c sh -c "gh auth login && gh ssh-key add ~/.ssh/$KEY.pub --title $KEY"
+   ```
+
+3. Clone both repos:
    ```bash
    mkdir -p ~/homelab
-   git clone git@github.com:Austin37AF/nix-config.git ~/homelab/nix
+   GIT_SSH_COMMAND="ssh -i ~/.ssh/$KEY" git clone git@github.com:Austin37AF/nix-config.git ~/homelab/nix
+   GIT_SSH_COMMAND="ssh -i ~/.ssh/$KEY" git clone git@github.com:Austin37AF/heimdall.git ~/homelab/heimdall
    ```
 
-3. Build and switch:
+4. Add the machine to `flake.nix`: an entry in `machines` (`name`, `sshKey = "$KEY"`) and a
+   `darwinConfigurations.<name> = mkDarwin machines.<name> [ ];` (add `workModules` for work Macs).
+   Commit and push from either machine.
+
+5. Pre-fetch inputs as your user, then switch. The first switch runs as root before the
+   SSH-agent passthrough exists, so the private heimdall input must already be in the store:
    ```bash
-   nix run nix-darwin -- switch --flake ~/homelab/nix#austin-m5-pro
+   ssh-add ~/.ssh/$KEY
+   nix flake archive ~/homelab/nix
+   sudo nix run nix-darwin -- switch --flake ~/homelab/nix#<name>
    ```
 
-4. Subsequent rebuilds:
+6. Subsequent rebuilds: `rebuild` (and `rebuild-home` on machines with a home variant).
+
+7. Optional, only if this Mac will edit secrets: create its own age key and add it as a
+   recipient in `.sops.yaml` from a machine that can already decrypt, then `sops updatekeys`:
    ```bash
-   rebuild
+   age-keygen -o ~/.config/sops/age/keys.txt
    ```
+
+`~/.ssh/config` is managed by home-manager (`modules/darwin/home.nix`); put ad-hoc hosts in
+`~/.ssh/config.local`.
 
 ## Manual Steps (New Machine)
 

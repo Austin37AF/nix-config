@@ -21,7 +21,8 @@ in
       ${env.aliases}
       
       # Zsh-only aliases
-      alias rebuild="sudo darwin-rebuild switch --flake ~/homelab/nix#austin-m5-pro"
+      # Touch GitHub first so AddKeysToAgent loads the key root will use via SSH_AUTH_SOCK
+      alias rebuild="ssh -o BatchMode=yes -T git@github.com >/dev/null 2>&1; sudo darwin-rebuild switch --flake ~/homelab/nix#austin-m5-pro"
       alias dev="nix develop ~/homelab/nix"
       
       # Direnv hook (silenced, only if .envrc exists)

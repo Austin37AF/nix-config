@@ -9,6 +9,16 @@ in
   
   # Fonts
   fonts.packages = commonPackages.fonts;
+
+  # Private flake inputs (heimdall) are fetched over SSH by `sudo darwin-rebuild`,
+  # which runs as root: keep the user's SSH agent and trust GitHub's host key.
+  security.sudo.extraConfig = ''
+    Defaults env_keep += "SSH_AUTH_SOCK"
+  '';
+  programs.ssh.knownHosts.github = {
+    hostNames = [ "github.com" ];
+    publicKey = "ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIOMqqnkVzrm0SdG6UOoqKLsabgH5C9okWi0dh2l9GKJl";
+  };
   
   # Application aliases for Spotlight
   system.activationScripts.applications.text = let

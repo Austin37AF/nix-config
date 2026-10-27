@@ -10,6 +10,6 @@
   imports = [
     ./zscaler.nix
     ./homebrew.nix
-    ./devin.nix
+    ./devin
   ];
 }

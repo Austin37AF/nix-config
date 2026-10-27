@@ -150,5 +150,7 @@ fi
       init.defaultBranch = "main";
       push.autoSetupRemote = true;
     };
+    # Personal agent files never get committed
+    ignores = [ "AGENTS.local.md" ".devin/*.local.json" ];
   };
 }

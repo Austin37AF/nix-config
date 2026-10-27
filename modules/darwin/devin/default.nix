@@ -33,6 +33,14 @@ let
         "Exec(nix eval)" "Exec(nix build)" "Exec(nix flake show)" "Exec(nix flake metadata)" "Exec(nix flake check)"
         "Exec(darwin-rebuild build)"
         "Exec(ls)" "Exec(readlink)" "Exec(which)" "Exec(wc)"
+        "Exec(gh pr view)" "Exec(gh pr diff)" "Exec(gh pr checks)"
+        "Exec(terraform fmt)" "Exec(terraform validate)" "Exec(tofu fmt)" "Exec(tofu validate)"
+        "Exec(helm template)" "Exec(helm lint)" "Exec(pre-commit run)" "Exec(aws sts get-caller-identity)"
+      ];
+      ask = [
+        "Exec(terraform apply)" "Exec(terraform destroy)" "Exec(tofu apply)" "Exec(tofu destroy)"
+        "Exec(kubectl apply)" "Exec(kubectl create)" "Exec(kubectl delete)" "Exec(kubectl patch)"
+        "Exec(kubectl edit)" "Exec(kubectl scale)" "Exec(helm install)" "Exec(helm upgrade)" "Exec(helm uninstall)"
       ];
       deny = [
         "Exec(sudo)" "Exec(darwin-rebuild switch)" "Exec(darwin-rebuild activate)"

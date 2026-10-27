@@ -1,5 +1,7 @@
 # Darwin-specific home-manager settings
 { machine, ... }: {
+  imports = [ ./devin ];
+
   # SSH config (this file replaces a hand-written ~/.ssh/config; ad-hoc hosts go in ~/.ssh/config.local)
   programs.ssh = {
     enable = true;
@@ -32,19 +34,6 @@
       "window.restoreWindows" = "all";
       "workbench.startupEditor" = "none";
       "telemetry.telemetryLevel" = "off";
-    };
-  };
-
-  # Devin CLI user-scope MCP servers (authenticate once with `devin mcp login <name>`)
-  home.file.".config/devin/mcp_config.json" = {
-    force = true;
-    text = builtins.toJSON {
-      mcpServers = {
-        atlassian = {
-          url = "https://mcp.atlassian.com/v1/mcp";
-          transport = "http";
-        };
-      };
     };
   };
 }

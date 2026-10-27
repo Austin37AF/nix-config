@@ -34,4 +34,17 @@
       "telemetry.telemetryLevel" = "off";
     };
   };
+
+  # Devin CLI user-scope MCP servers (authenticate once with `devin mcp login <name>`)
+  home.file.".config/devin/mcp_config.json" = {
+    force = true;
+    text = builtins.toJSON {
+      mcpServers = {
+        atlassian = {
+          url = "https://mcp.atlassian.com/v1/mcp";
+          transport = "http";
+        };
+      };
+    };
+  };
 }

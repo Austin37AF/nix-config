@@ -15,8 +15,8 @@
     };
   };
 
-  # Windsurf settings (macOS only)
-  home.file."Library/Application Support/Windsurf/User/settings.json" = {
+  # Devin Desktop (formerly Windsurf) editor settings (macOS only)
+  home.file."Library/Application Support/Devin/User/settings.json" = {
     force = true;
     text = builtins.toJSON {
       "security.workspace.trust.untrustedFiles" = "open";

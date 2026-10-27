@@ -6,14 +6,25 @@
 #
 # Or conditionally:
 #   imports = lib.optionals isWorkMachine [ ./modules/common/zscaler.nix ];
+#
+# The CA bundle at /etc/ssl/certs/ca-certificates.crt is Nix-generated:
+# nixpkgs cacert roots plus the Zscaler root (./zscaler-root.crt) via
+# security.pki.certificateFiles, so it tracks nixpkgs updates automatically.
 { config, lib, pkgs, ... }:
 
 let
-  certBundle = "/Users/austin.mills/certs/bundle.crt";
-  # For NixOS, use a different path
-  # certBundle = if pkgs.stdenv.isDarwin then "/Users/austin.mills/certs/bundle.crt" else "/home/austinm/certs/bundle.crt";
+  certBundle = "/etc/ssl/certs/ca-certificates.crt";
 in
 {
+  security.pki.certificateFiles = [ ./zscaler-root.crt ];
+
+  # ~/certs/bundle.crt is referenced by ~/.gitconfig (http.sslCAInfo) and
+  # gcloud (custom_ca_certs_file); manage it as a link to the Nix bundle.
+  # The pre-existing hand-made file is backed up via
+  # home-manager.backupFileExtension = "hm-backup".
+  home-manager.users."austin.mills".home.file."certs/bundle.crt".source =
+    config.environment.etc."ssl/certs/ca-certificates.crt".source;
+
   # Nix daemon SSL cert (for nix develop, nix build, etc.)
   nix.settings.ssl-cert-file = certBundle;
 

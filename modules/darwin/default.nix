@@ -4,6 +4,8 @@ let
   darwinPackages = import ./packages.nix { inherit pkgs; };
 in
 {
+  imports = [ ./cert-pem.nix ];
+
   # System packages
   environment.systemPackages = commonPackages.cli ++ darwinPackages.gui;
   

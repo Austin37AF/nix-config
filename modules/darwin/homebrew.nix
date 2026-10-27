@@ -3,6 +3,7 @@
     enable = true;
     enableZshIntegration = true;  # brew shellenv (replaces the old hand-written ~/.zprofile)
     onActivation.cleanup = "zap";
+    onActivation.upgrade = true;
     taps = [];
     brews = [
       "direnv"

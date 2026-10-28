@@ -5,6 +5,8 @@ description: Validate Helm chart changes locally the way CI does (lint and rende
 
 Check changed charts without touching any cluster, and report what the change does to the rendered manifests.
 
+Run tools through the folder's dev shell: prefix commands with `direnv exec .` (agent shells don't load direnv), e.g. `direnv exec . helm lint ...`.
+
 ## 1. Find changed charts
 - `git fetch origin main`, then `git diff --name-only origin/main...HEAD` (plus uncommitted changes).
 - Map files to chart directories (the nearest parent containing `Chart.yaml`).
@@ -18,11 +20,11 @@ Scratch output in `/tmp/chart-check/<chart>/<head|main>/`.
 
 ## 3. Unit tests
 - If the chart has a `tests/` directory: `helm unittest <chart>`.
-- CI uses helm-unittest 1.1.2; the local plugin may be older. If results differ, say so rather than changing the plugin.
+- CI uses helm-unittest 1.1.2; the Nix-managed plugin may be newer. If results differ, say so rather than changing the plugin.
 - Never update snapshots (`-u`) unless asked; report snapshot diffs instead.
 
 ## 4. Schema validation
-- `nix shell nixpkgs#kubeconform -c kubeconform -strict -ignore-missing-schemas -summary /tmp/chart-check/<chart>/head/*.yaml`
+- `direnv exec . kubeconform -strict -ignore-missing-schemas -summary /tmp/chart-check/<chart>/head/*.yaml`
 - CRD-based resources are skipped by `-ignore-missing-schemas`; list which kinds were skipped.
 
 ## 5. Diff against main
@@ -34,7 +36,7 @@ Scratch output in `/tmp/chart-check/<chart>/<head|main>/`.
 - sparkai gitops: `cd cmd/destination-validator && go run main.go`; `prettier -c .`.
 
 ## 7. Optional server-side dry run
-Only when asked: `kubectl --context docker-desktop apply --dry-run=server -f <rendered>` (CRDs must exist on the cluster; skip kinds that don't).
+Only when asked: create a throwaway cluster (`kind create cluster --name chart-check --config ~/.config/kind/cluster.yaml --kubeconfig /tmp/chart-check/kubeconfig`), install the CRDs the chart needs, then `kubectl --kubeconfig /tmp/chart-check/kubeconfig --context kind-chart-check apply --dry-run=server -f <rendered>`. Delete it afterwards with `kind delete cluster --name chart-check --kubeconfig /tmp/chart-check/kubeconfig`.
 
 ## 8. Cleanup
 `git worktree remove /tmp/chart-check/main-src` and `rm -rf /tmp/chart-check`.

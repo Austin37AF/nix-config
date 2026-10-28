@@ -6,33 +6,149 @@ Declarative macOS system configuration using nix-darwin, nix-homebrew, and Home 
 
 ```
 ~/homelab/nix/
-├── flake.nix              # Entry point
+├── flake.nix                    # Entry point: machines, darwinConfigurations, devShells, nixosConfigurations
 ├── modules/
-│   ├── darwin.nix         # System settings, defaults, fonts
-│   ├── homebrew.nix       # Homebrew brews and casks
-│   ├── zsh.nix            # Shell configuration
-│   ├── home.nix           # Home Manager (git, powerline-go, Windsurf settings)
-│   ├── local-ai/          # LM Studio + Zed (Qwen3.6-27B, PR review skill) + nvtop; not on k8s nodes
-│   ├── devshell.nix       # Dev shell for projects without Devbox
-│   ├── packages.nix       # Shared package lists (cli, dev, fonts, gui)
-│   └── env.nix            # Shared env vars, aliases, powerline config
+│   ├── common/
+│   │   ├── home.nix             # Home Manager: git, powerline-go, shell config (all hosts)
+│   │   ├── packages.nix         # Shared package lists: cli, dev, fonts
+│   │   ├── env.nix              # Shared env vars, aliases, powerline config
+│   │   └── zsh.nix              # zsh + rebuild aliases (nixos + darwin)
+│   ├── darwin/
+│   │   ├── default.nix          # System settings, defaults, activation
+│   │   ├── packages.nix         # macOS GUI apps (vim, obsidian, rectangle, ...)
+│   │   ├── homebrew.nix         # Homebrew brews and casks (all Macs)
+│   │   ├── home.nix             # Darwin HM: ssh config, Devin Desktop editor settings merge
+│   │   ├── devin/               # Devin CLI: AGENTS.md, mcp_config.json, config.json merge, permissions
+│   │   ├── cert-pem.nix         # eMudhra response: prunes distrusted roots from /etc/ssl/cert.pem
+│   │   └── zsh.nix              # Darwin-specific zsh
+│   ├── devshell.nix             # `nix develop` dev shell (also loaded by direnv)
+│   ├── hosts/work/              # Work-machine-only modules (imported by the work config)
+│   │   ├── zscaler.nix          # Zscaler root in the Nix CA bundle + cert env vars
+│   │   ├── zscaler-root.crt     # The Zscaler root cert
+│   │   ├── homebrew.nix         # Work brews (gimme-aws-creds)
+│   │   ├── direnv.nix           # direnv + nix-direnv, .envrc, .actrc, kind cluster.yaml
+│   │   └── devin/               # Work Devin addendum + AGENTS.local.md/skills symlinks
+│   ├── local-ai/                # LM Studio + Zed (local LLM) config; not on k8s nodes
+│   └── kubernetes/              # NixOS k8s cluster configs (nodes, disko, hardening)
+├── secrets/                     # sops-encrypted k8s secrets
+├── devbox.json                  # Cluster-management shell (sops, age, kubectl, helm, k9s)
+└── .github/workflows/build-iso.yaml  # Builds the k8s installer ISO
 ```
+
+Two hosts share the same machine: `austin-m5-pro` (work, adds `modules/hosts/work`)
+and `austin-m5-pro-home` (personal, no work modules). Rebuild with `rebuild` /
+`rebuild-home` (needs sudo).
 
 ## Quick Commands
 
 ```bash
-# Rebuild system configuration (rebuild-home for personal mode)
-rebuild
-
-# Enter dev shell manually (go, python, opentofu, jq, yq)
-dev
-
-# Update flake inputs
-nix flake update
-
-# Exit current shell
-exit
+rebuild                    # darwin-rebuild switch (work config); primes the SSH agent first so root can fetch the private heimdall input
+rebuild-home               # switch to the personal config
+dev                        # nix dev shell manually (outside direnv dirs)
+nix flake update           # update all inputs
 ```
+
+## Certificates / Zscaler (work)
+
+- `security.pki.certificateFiles` appends `zscaler-root.crt` to the nixpkgs
+  cacert bundle at `/etc/ssl/certs/ca-certificates.crt`; the same file is
+  linked at `~/certs/bundle.crt` for tools that need a stable path
+  (`http.sslCAInfo`, gcloud `custom_ca_certs_file`).
+- `SSL_CERT_FILE`, `REQUESTS_CA_BUNDLE`, `NODE_EXTRA_CA_CERTS` and
+  `NIX_SSL_CERT_FILE` all point at it (`modules/hosts/work/zscaler.nix`,
+  `modules/common/env.nix`).
+- `cert-pem.nix` (eMudhra compromise): every rebuild, an activation step
+  removes distrusted roots (emSign ECC Root CA - G3, AAA Certificate Services)
+  from `/etc/ssl/cert.pem`, keeping a backup at `/etc/ssl/cert.pem.orig`.
+  It's a no-op once Apple ships a clean file.
+
+## Devin (CLI + Desktop)
+
+- `~/.config/devin/AGENTS.md`: global rules — base set (`modules/darwin/devin`)
+  plus a work addendum (Zscaler, kubectl/helm/Atlantis guardrails,
+  `modules/hosts/work/devin`).
+- `mcp_config.json`: declarative user-scope MCP servers (Atlassian).
+- `config.json`: **merged** on activation, not symlinked — Devin mutates it
+  (approvals, keymap, hooks). Managed keys win, `permissions.allow/ask/deny`
+  are unioned with existing, JSONC/non-JSON files are left alone. Managed
+  settings include the Fusion default model and the permission lists. Note:
+  removing an entry from the Nix lists does not remove it from the file.
+- Per-repo `AGENTS.local.md` notes and `~/.config/devin/skills/*` are
+  **out-of-store symlinks** into `modules/hosts/work/devin/` — edits apply
+  without a rebuild. `AGENTS.local.md` is ignored globally via
+  `programs.git.ignores`.
+- Skills:
+
+  | Skill | What it does |
+  |---|---|
+  | `chart-check` | Lint/render Helm charts like CI (helm template, unittest, kubeconform) |
+  | `kyverno-test` | Test Kyverno policies on a throwaway kind cluster, then clean up |
+  | `go-bump-release` | Bump a Go repo's version, PR, release, verify published binaries |
+  | `ci-local` | Run a repo's GitHub Actions jobs locally with `act` |
+
+- Permissions (in `modules/darwin/devin/default.nix`):
+  - allow: read-only git, `nix eval/build/flake show|metadata|check`, `darwin-rebuild build`, `gh pr view/diff/checks`, terraform/tofu `fmt`/`validate`, `helm template/lint`, `pre-commit run`, `aws sts get-caller-identity`
+  - ask: terraform/tofu `apply`/`destroy`, mutating kubectl, `helm install/upgrade/uninstall`
+  - deny: `sudo`, `darwin-rebuild switch/activate`, `git push --force*`
+  - Matching is on the start of the command only, so the cluster-safety rules in AGENTS.md are the real guard.
+- `attribution = false`: no Devin trailer on commits/PRs.
+- Devin Desktop's `settings.json` (formerly Windsurf) is also merged on
+  activation (managed keys win; stays a regular file).
+- To add a repo to the personal notes: drop a markdown file in
+  `modules/hosts/work/devin/repos/` and add one line to `outOfStoreLinks` in
+  `modules/hosts/work/devin/default.nix`.
+
+## Work dev shell via direnv
+
+- `.envrc` in `~/brt-projects` and `~/sparkai-projects` runs `use flake
+  ~/homelab/nix`; nix-direnv caches the shell (second entry ~0.2s).
+  `direnv.toml` whitelists those two exact paths only.
+- The dev shell's interactive bits (aliases, completions, powerline prompt)
+  are skipped when `DIRENV_IN_ENVRC` is set; env/PATH exports always apply.
+- Agent shells don't run the direnv hook — use `direnv exec . <cmd>`.
+- Outside those dirs: `dev` (alias for `nix develop`).
+
+## kind (throwaway clusters)
+
+- `kind` in the dev shell is wrapped to unset `DOCKER_DEFAULT_PLATFORM` so
+  nodes run native arm64 (linux/amd64 emulation broke containerd).
+- `~/.config/kind/cluster.yaml` mounts the Zscaler CA bundle into nodes:
+  ```bash
+  kind create cluster --name <task> --image kindest/node:<ver> \
+    --config ~/.config/kind/cluster.yaml --kubeconfig /tmp/kind-<task>.kubeconfig
+  kind delete cluster --name <task> --kubeconfig /tmp/kind-<task>.kubeconfig
+  ```
+- Keep a separate kubeconfig per cluster; never touch `docker-desktop`.
+- `kind load` images must be arm64 (or multi-arch).
+
+## act / local CI
+
+- `act` runs GitHub Actions jobs locally; `~/.actrc` pins the catthehacker
+  runner images, linux/amd64, and mounts the CA bundle + cert env vars so
+  TLS inside job containers verifies behind Zscaler.
+- Limits: runner image differs from GitHub's, jobs run emulated (slow), and
+  auth/publish jobs (OIDC, GitHub App tokens, pushes, deploys) can't run
+  locally — run `pull_request` jobs only, `--rm` containers.
+
+## Local AI (`modules/local-ai`)
+
+- LM Studio + Zed (Homebrew casks); Zed is configured against LM Studio's local server (Qwen3.6-27B) with a `pr-review` skill in `~/.agents/skills`.
+- One-time model download (after launching LM Studio once): `lms get qwen/qwen3.6-27b --mlx --select` and pick the 6-bit quant.
+- Day to day: `heimdall ai up | down | status`.
+
+## Homelab Kubernetes Cluster (`modules/kubernetes`)
+
+NixOS k3s cluster on Mac minis; full guide in [`modules/kubernetes/README.md`](modules/kubernetes/README.md).
+
+```bash
+devbox shell                        # repo root: sops, age, kubectl, helm, k9s
+sops secrets/k8s.yaml               # edit secrets
+nix build .#k8s-installer-iso       # installer ISO (CI also publishes it to a rolling release)
+nix run .#deploy                    # deploy all nodes (or: heimdall cluster update)
+nix run .#deploy -- .#k8s-server-1  # one node
+```
+
+`heimdall` (cluster ops + `heimdall ai`) is installed on Darwin from its flake input.
 
 ## Bootstrap on a New Machine
 
@@ -84,21 +200,21 @@ SOPS. SOPS would only move the problem: decrypting needs an age key copied over 
 ## Manual Steps (New Machine)
 
 - **Raycast**: Set CMD+Space as hotkey (Spotlight is disabled by config)
-- **Company apps**: Chrome and Slack are pre-installed by MDM — uncomment in `homebrew.nix` if needed
 - **Terminal.app Font** (if using Terminal.app): Settings → Profiles → Font → Change → Select "JetBrainsMono Nerd Font"
-- **Windsurf font is auto-configured** via `home.nix`
+- **Devin Desktop font/settings** are merged automatically (see Devin section)
 
 ## What's Managed
 
-### Nix Packages (`darwin.nix`)
-- CLI tools + GUI apps installed system-wide
+### Nix Packages (`darwin/default.nix`, `packages.nix`)
+- CLI tools (`packages.nix` cli) + GUI apps (`modules/darwin/packages.nix` gui) system-wide
 - Fonts (JetBrainsMono Nerd Font)
 
-### Homebrew (`homebrew.nix`)
-- **Brews**: awscli, direnv, gh, gimme-aws-creds, k9s, pre-commit, mas
-- **Casks**: docker-desktop, gcloud-cli, google-drive, raycast
+### Homebrew
+- `modules/darwin/homebrew.nix` (all Macs): brews `direnv`; casks `docker-desktop`, `google-chrome`, `raycast`, `slack`, `stats`, `devin-desktop`. `onActivation.upgrade` + `cleanup = "zap"` — anything not declared gets removed on rebuild. Taps pinned via nix-homebrew flake inputs.
+- `modules/hosts/work/homebrew.nix` (work only): `gimme-aws-creds`.
+- `modules/local-ai/darwin.nix`: casks `lm-studio`, `zed`.
 
-### System Defaults (`darwin.nix`)
+### System Defaults (`darwin/default.nix`)
 - Dock: autohide, persistent apps
 - Finder: show extensions, path bar, status bar
 - Trackpad: right-click enabled
@@ -106,27 +222,26 @@ SOPS. SOPS would only move the problem: decrypting needs an age key copied over 
 - Spotlight: disabled (for Raycast)
 - Touch ID: enabled for sudo
 
-### Home Manager (`home.nix`)
-- Git config (user, email, default branch)
-- Powerline-go prompt with custom modules (mynix, mykube)
+### Home Manager (`modules/common/home.nix`, `modules/darwin/home.nix`)
+- Git config (user, email, default branch, global ignores for agent files)
+- Powerline-go prompt with custom modules (`~/.local/bin/powerline-go-mynix`, `powerline-go-mykube`)
 - Zsh completions (sparkctl, valhalla, kubectl)
-- Windsurf settings (font, terminal profile, nix language server)
-- Custom scripts in `~/.local/bin`
+- SSH config (`~/.ssh/config.local` for ad-hoc hosts)
+- Devin CLI + Devin Desktop config (above)
 
 ### Dev Shell (`devshell.nix`)
-- Includes all CLI tools plus: go, python3, opentofu, powerline-go, act
-- Shows ❄️ indicator in prompt
-- Enter with `dev` alias
+- All CLI tools plus dev-only: go, python3, opentofu, kyverno, kubeconform, kind, act, devbox, helm (with helm-unittest)
+- Enter with `dev`, or automatically via direnv under the work dirs
 
 ### Shared Packages (`packages.nix`)
-- **cli**: awscli, kubectl, helm, k9s, gh, pre-commit, gcloud (with gke-auth-plugin), jq, yq, nixd
-- **dev**: go, python3, opentofu, powerline-go, act
-- **fonts**: JetBrainsMono Nerd Font (for powerline-go icons)
-- **gui**: vim, mkalias, obsidian, alt-tab, hidden-bar, rectangle, stats, the-unarchiver
+- **cli**: awscli2, kubectl, helm + helm-unittest, k9s, gh, pre-commit, gcloud (gke-auth-plugin), jq, yq, nixd, devbox, icloudpd, prettier
+- **dev**: go, python3+pip, opentofu, powerline-go, act, kyverno, kubeconform, kind
+- **fonts**: JetBrainsMono Nerd Font
+- **gui** (`modules/darwin/packages.nix`): vim, mkalias, obsidian, alt-tab, hidden-bar, rectangle, the-unarchiver
 
 ### Shared Environment (`env.nix`)
-- **vars**: PATH, GOPATH, Docker platform, Zscaler certs, GKE auth plugin
-- **aliases**: k, k_dd, tf, terraform, tf-init-all, google-auth, ll
+- **vars**: PATH, GOPATH, Docker platform, GKE auth plugin
+- **aliases**: k, k_dd, tf, terraform, tf-init-all, google-auth, ll, brt, devin
 - **powerlineBash**: Bash prompt config for dev shell
 - **showKubeNamespace**: Toggle to always show namespace (default: false)
 
@@ -142,12 +257,18 @@ Custom modules display shell and Kubernetes context:
 | GCP-PROD (red) | Production cluster |
 | GCP-STAGING (green) | Staging cluster |
 | GCP-INFRA (magenta) | Infrastructure cluster |
+| brt-prod (red) | BRT EKS prod |
+| brtplat-dev (green) | BRT EKS dev |
+| brtplat-infr (magenta) | BRT EKS infra |
+| mini | minikube |
+| context name (grey) | Any other context |
 
 Namespace is shown only when not `default`. To always show namespace, set `showKubeNamespace = true` in `env.nix`.
 
 ## Shell Workflow
 
-Windsurf terminals open in regular zsh. Enter dev environments as needed:
+Terminals open in regular zsh. Under `~/brt-projects` and `~/sparkai-projects`
+direnv loads the dev shell automatically; elsewhere enter it manually:
 
 ```bash
 dev               # Enter nix dev shell → shows ❄️
@@ -163,11 +284,6 @@ Runs weekly, deletes generations older than 14 days. Manual run:
 ```bash
 nix-collect-garbage -d
 ```
-
-## Company-Managed Apps (Not in Config)
-
-- Google Chrome
-- Slack
 
 ## Related Repos
 

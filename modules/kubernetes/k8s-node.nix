@@ -46,6 +46,12 @@ in
       clusterInit = cfg.clusterInit;
       serverAddr = lib.mkIf (cfg.role == "agent" || (cfg.role == "server" && !cfg.clusterInit)) cfg.serverAddr;
       extraFlags = cfg.extraFlags;
+      # kubeconfig readable by k8sadmin so plain `kubectl` works on server nodes
+      writeKubeconfigMode = lib.mkIf (cfg.role == "server") "0644";
+    };
+
+    environment.variables = lib.mkIf (cfg.role == "server") {
+      KUBECONFIG = "/etc/rancher/k3s/k3s.yaml";
     };
 
     # Required for k3s networking
@@ -60,10 +66,11 @@ in
     networking.firewall = {
       enable = true;
       allowedTCPPorts = [
+        10250 # Kubelet metrics (all nodes)
+      ] ++ lib.optionals (cfg.role == "server") [
         6443  # Kubernetes API server
-        10250 # Kubelet metrics
-        2379  # etcd client (server only)
-        2380  # etcd peer (server only)
+        2379  # etcd client
+        2380  # etcd peer
       ];
       allowedUDPPorts = [
         8472  # Flannel VXLAN
@@ -95,7 +102,8 @@ in
     # Disable swap (required for Kubernetes)
     swapDevices = lib.mkForce [];
     
-    # Ensure time sync (critical for K8s)
+    # Ensure time sync (critical for K8s) - chrony only, not timesyncd
     services.chrony.enable = true;
+    services.timesyncd.enable = lib.mkForce false;
   };
 }

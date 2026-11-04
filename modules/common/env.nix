@@ -32,7 +32,12 @@
   
   # Aliases (bash-compatible)
   aliases = ''
-    alias ll="ls -lG"
+    # -G is color on macOS ls but --no-group on GNU ls
+    if [[ "$OSTYPE" == darwin* ]]; then
+      alias ll="ls -lG"
+    else
+      alias ll="ls -l --color=auto"
+    fi
     alias k="kubectl"
     alias k_dd="kubectl config use-context docker-desktop"
     alias google-auth="gcloud auth login --update-adc"

@@ -1,0 +1,49 @@
+name: Flake Check
+
+# Evaluates all outputs and runs deploy-rs checks on x86_64-linux.
+# Catches eval breakage in any host config, not just kubernetes/.
+on:
+  push:
+    branches: [main]
+  pull_request:
+  workflow_dispatch:
+
+jobs:
+  flake-check:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Install Nix
+        uses: cachix/install-nix-action@v27
+        with:
+          nix_path: nixpkgs=channel:nixos-unstable
+          extra_nix_config: |
+            experimental-features = nix-command flakes
+
+      - name: Setup Cachix
+        uses: cachix/cachix-action@v15
+        with:
+          name: nix-community
+          authToken: '${{ secrets.CACHIX_AUTH_TOKEN }}'
+        continue-on-error: true  # Don't fail if no cachix token
+
+      # The heimdall input is git+ssh to a private repo; evaluating the flake
+      # fetches all inputs, so the runner needs a key with read access to it.
+      # Set FLAKE_INPUT_SSH_KEY to a read-only deploy key on Austin37AF/heimdall.
+      - name: Configure SSH for private flake inputs
+        env:
+          FLAKE_INPUT_SSH_KEY: ${{ secrets.FLAKE_INPUT_SSH_KEY }}
+        run: |
+          if [ -z "$FLAKE_INPUT_SSH_KEY" ]; then
+            echo "FLAKE_INPUT_SSH_KEY not set; private flake inputs will fail to fetch"
+            exit 0
+          fi
+          mkdir -p ~/.ssh
+          echo "$FLAKE_INPUT_SSH_KEY" > ~/.ssh/id_ed25519
+          chmod 600 ~/.ssh/id_ed25519
+          ssh-keyscan github.com >> ~/.ssh/known_hosts 2>/dev/null
+
+      - name: nix flake check
+        run: nix flake check --print-build-logs

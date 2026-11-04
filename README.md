@@ -1,6 +1,7 @@
-# Nix Darwin Configuration
+# Nix Configuration
 
-Declarative macOS system configuration using nix-darwin, nix-homebrew, and Home Manager.
+Declarative configuration for macOS (nix-darwin, nix-homebrew, Home Manager),
+NixOS hosts (gaming PC, NixOS-WSL), and a k3s cluster on Mac minis.
 
 ## Structure
 

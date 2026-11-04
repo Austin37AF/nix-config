@@ -25,6 +25,10 @@
     disko.url = "github:nix-community/disko/latest";
     disko.inputs.nixpkgs.follows = "nixpkgs";
 
+    # NixOS on WSL (Windows PC)
+    nixos-wsl.url = "github:nix-community/NixOS-WSL/main";
+    nixos-wsl.inputs.nixpkgs.follows = "nixpkgs";
+
     # Declarative tap management (Darwin only)
     homebrew-core = {
       url = "github:homebrew/homebrew-core";
@@ -40,7 +44,7 @@
     heimdall.inputs.nixpkgs.follows = "nixpkgs";
   };
 
-  outputs = inputs@{ self, nix-darwin, nixpkgs, nix-homebrew, home-manager, homebrew-core, homebrew-cask, nixos-generators, sops-nix, deploy-rs, heimdall, disko }:
+  outputs = inputs@{ self, nix-darwin, nixpkgs, nix-homebrew, home-manager, homebrew-core, homebrew-cask, nixos-generators, sops-nix, deploy-rs, heimdall, disko, nixos-wsl }:
   let
     # Darwin pkgs
     darwinPkgs = import nixpkgs {
@@ -225,6 +229,32 @@
       "gaming-pc" = nixpkgs.lib.nixosSystem {
         system = "x86_64-linux";
         modules = [ ./modules/hosts/gaming-pc disko.nixosModules.disko ];
+      };
+
+      # ============================================
+      # WSL (NixOS-WSL on the Windows PC)
+      # ============================================
+      #
+      # Rebuild inside WSL: `rebuild` (builds as the user so the private heimdall
+      # input is fetched with the user's SSH key, activates with sudo).
+
+      "wsl" = nixpkgs.lib.nixosSystem {
+        system = "x86_64-linux";
+        modules = [
+          nixos-wsl.nixosModules.default
+          ./modules/hosts/wsl
+          { system.configurationRevision = self.rev or self.dirtyRev or null; }
+          { environment.systemPackages = [ heimdall.packages.x86_64-linux.default ]; }
+          home-manager.nixosModules.home-manager
+          {
+            home-manager.useGlobalPkgs = true;
+            home-manager.useUserPackages = true;
+            home-manager.backupFileExtension = "hm-backup";
+            home-manager.users.nixos = {
+              imports = [ ./modules/common/home.nix ./modules/hosts/wsl/home.nix ];
+            };
+          }
+        ];
       };
     };
 

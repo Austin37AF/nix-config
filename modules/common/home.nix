@@ -3,8 +3,9 @@ let
   env = import ./env.nix;
 in
 {
-  home.username = "austin.mills";
-  home.homeDirectory = lib.mkForce "/Users/austin.mills";
+  # On NixOS, Home Manager derives these from users.users.<name>
+  home.username = lib.mkIf pkgs.stdenv.hostPlatform.isDarwin "austin.mills";
+  home.homeDirectory = lib.mkIf pkgs.stdenv.hostPlatform.isDarwin (lib.mkForce "/Users/austin.mills");
   home.stateVersion = "24.05";
   
   # Packages

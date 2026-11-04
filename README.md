@@ -29,6 +29,7 @@ Declarative macOS system configuration using nix-darwin, nix-homebrew, and Home 
 │   │   ├── direnv.nix           # direnv + nix-direnv, .envrc, .actrc, kind cluster.yaml
 │   │   └── devin/               # Work Devin addendum + AGENTS.local.md/skills symlinks
 │   ├── hosts/gaming-pc/         # NixOS gaming PC (Plasma 6, NVIDIA 580 legacy, Steam)
+│   ├── hosts/wsl/               # NixOS-WSL on the Windows PC (CLI tools, zsh, Home Manager)
 │   ├── local-ai/                # LM Studio + Zed (local LLM) config; not on k8s nodes
 │   └── kubernetes/              # NixOS k8s cluster configs (nodes, disko, hardening)
 ├── scripts/                     # install-node.sh, install-gaming-pc.sh (nixos-anywhere wrappers)
@@ -176,6 +177,31 @@ branches dropped Pascal and the open kernel modules need Turing or newer.
 The install builds on the PC under sustained all-core load. Check cooling first: the CPU
 should idle around 35-50°C in the BIOS hardware monitor. Dried thermal paste and a dusty
 radiator once made it climb past 85°C at idle and power off mid-install.
+
+## WSL (NixOS-WSL)
+
+`wsl` (`modules/hosts/wsl`): NixOS-WSL on the Windows PC, default user `nixos`. Shared CLI
+packages, zsh with the powerline prompt, Home Manager (`common/home.nix`: git, prompt
+scripts) and heimdall. The repo lives at `~/repos/nix-config`; a tmpfiles symlink provides
+`~/homelab/nix` for the shared aliases. zsh is the default shell for all users.
+
+- `modules/hosts/wsl/home.nix` merges Devin Desktop settings into the **Windows**
+  `%APPDATA%\Devin\User\settings.json` (via `/mnt/c`): the default integrated terminal is
+  `wsl.exe -d NixOS` and windows restore (so a WSL remote window reopens). Managed keys
+  win, the rest of the file is kept.
+- The same module installs JetBrainsMono Nerd Font on Windows per user (no admin): copies
+  the TTFs to `%LOCALAPPDATA%\Microsoft\Windows\Fonts` and registers them under
+  `HKCU\...\CurrentVersion\Fonts` with `reg.exe`. It's also the Devin Desktop terminal font.
+
+- `rebuild` runs `nixos-rebuild switch --flake ~/homelab/nix#wsl --sudo`: it builds as
+  `nixos` (so the private heimdall input is fetched with the user's SSH key) and only
+  activates as root.
+- First switch from a stock NixOS-WSL install (flakes not enabled yet):
+  ```bash
+  NIX_CONFIG="experimental-features = nix-command flakes" \
+    nixos-rebuild switch --flake ~/repos/nix-config#wsl --sudo
+  ```
+  Then `wsl --shutdown` from Windows to apply the hostname and login shell.
 
 ## Bootstrap on a New Machine
 

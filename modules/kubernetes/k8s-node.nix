@@ -45,9 +45,9 @@ in
       tokenFile = lib.mkIf (cfg.tokenFile != null) cfg.tokenFile;
       clusterInit = cfg.clusterInit;
       serverAddr = lib.mkIf (cfg.role == "agent" || (cfg.role == "server" && !cfg.clusterInit)) cfg.serverAddr;
-      extraFlags = cfg.extraFlags;
-      # kubeconfig readable by k8sadmin so plain `kubectl` works on server nodes
-      writeKubeconfigMode = lib.mkIf (cfg.role == "server") "0644";
+      # --write-kubeconfig-mode makes k3s.yaml readable by k8sadmin on servers
+      extraFlags = cfg.extraFlags
+        ++ lib.optionals (cfg.role == "server") [ "--write-kubeconfig-mode=0644" ];
     };
 
     environment.variables = lib.mkIf (cfg.role == "server") {

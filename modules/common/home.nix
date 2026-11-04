@@ -110,7 +110,27 @@ EOF
 fi
     '';
   };
-  
+
+  home.file.".local/bin/powerline-go-myvalhalla" = {
+    executable = true;
+    text = ''
+#!/usr/bin/env bash
+# Valhalla/AWS indicator: swords, or fire for a firefight role; background shows the account
+[ -z "$VALHALLA_ENV" ] && [ -z "$AWS_PROFILE" ] && exit 0
+TARGET="''${VALHALLA_ENV:-$AWS_PROFILE}"
+case "$AWS_PROFILE" in
+  *firefight*|*FIREFIGHT*) CONTENT="🔥" ;;
+  *) CONTENT="⚔️" ;;
+esac
+case "$TARGET" in
+  *prod*) BG=160 ;;
+  *infra*) BG=161 ;;
+  *) BG=130 ;;
+esac
+echo "[{\"Content\": \"$CONTENT\", \"Foreground\": 15, \"Background\": $BG}]"
+    '';
+  };
+
   # Powerline-go prompt and completions
   programs.zsh = {
     enable = true;
@@ -124,7 +144,7 @@ fi
       # Powerline-go prompt
       function powerline_precmd() {
         local exit_code=$?
-        PS1="$(powerline-go -error $exit_code -shell zsh -modules mynix,mykube,cwd,git,exit ${env.powerlineFlags})"
+        PS1="$(powerline-go -error $exit_code -shell zsh -modules mynix,myvalhalla,mykube,cwd,git,exit ${env.powerlineFlags})"
       }
 
       function install_powerline_precmd() {

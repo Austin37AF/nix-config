@@ -3,7 +3,6 @@
   cli = [
     pkgs.awscli2
     pkgs.kubectl
-    (pkgs.wrapHelm pkgs.kubernetes-helm { plugins = [ pkgs.kubernetes-helmPlugins.helm-unittest ]; })
     pkgs.k9s
     pkgs.gh
     pkgs.pre-commit
@@ -25,6 +24,7 @@
     (pkgs.python3.withPackages (ps: [ ps.pip ]))
     pkgs.opentofu
     pkgs.powerline-go
+    (pkgs.wrapHelm pkgs.kubernetes-helm { plugins = [ pkgs.kubernetes-helmPlugins.helm-unittest ]; })
     pkgs.act
     pkgs.kyverno
     pkgs.kubeconform

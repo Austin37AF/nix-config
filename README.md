@@ -261,8 +261,8 @@ SOPS. SOPS would only move the problem: decrypting needs an age key copied over 
 - Enter with `dev`, or automatically via direnv under the work dirs
 
 ### Shared Packages (`packages.nix`)
-- **cli**: awscli2, kubectl, helm + helm-unittest, k9s, gh, pre-commit, gcloud (gke-auth-plugin), jq, yq, nixd, devbox, icloudpd, prettier
-- **dev**: go, python3+pip, opentofu, powerline-go, act, kyverno, kubeconform, kind
+- **cli**: awscli2, kubectl, k9s, gh, pre-commit, gcloud (gke-auth-plugin), jq, yq, nixd, devbox, icloudpd, prettier
+- **dev**: go, python3+pip, opentofu, powerline-go, helm + helm-unittest, act, kyverno, kubeconform, kind
 - **fonts**: JetBrainsMono Nerd Font
 - **gui** (`modules/darwin/packages.nix`): vim, mkalias, obsidian, alt-tab, hidden-bar, rectangle, the-unarchiver
 

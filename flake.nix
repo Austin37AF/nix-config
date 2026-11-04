@@ -214,6 +214,18 @@
       "k8s-server-2" = mkK8sNode "k8s-server-2";
       "k8s-server-3" = mkK8sNode "k8s-server-3";
       "k8s-agent-1" = mkK8sNode "k8s-agent-1";
+
+      # ============================================
+      # Gaming PC (NixOS, KDE Plasma 6)
+      # ============================================
+      #
+      # Install: ./scripts/install-gaming-pc.sh <installer-ip>  (see README)
+      # Rebuild on the PC: `rebuild`. Not managed by deploy-rs.
+
+      "gaming-pc" = nixpkgs.lib.nixosSystem {
+        system = "x86_64-linux";
+        modules = [ ./modules/hosts/gaming-pc disko.nixosModules.disko ];
+      };
     };
 
     # ============================================

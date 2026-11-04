@@ -28,8 +28,10 @@ Declarative macOS system configuration using nix-darwin, nix-homebrew, and Home 
 │   │   ├── homebrew.nix         # Work brews (gimme-aws-creds)
 │   │   ├── direnv.nix           # direnv + nix-direnv, .envrc, .actrc, kind cluster.yaml
 │   │   └── devin/               # Work Devin addendum + AGENTS.local.md/skills symlinks
+│   ├── hosts/gaming-pc/         # NixOS gaming PC (Plasma 6, NVIDIA 580 legacy, Steam)
 │   ├── local-ai/                # LM Studio + Zed (local LLM) config; not on k8s nodes
 │   └── kubernetes/              # NixOS k8s cluster configs (nodes, disko, hardening)
+├── scripts/                     # install-node.sh, install-gaming-pc.sh (nixos-anywhere wrappers)
 ├── secrets/                     # sops-encrypted k8s secrets
 ├── devbox.json                  # Cluster-management shell (sops, age, kubectl, helm, k9s)
 └── .github/workflows/build-iso.yaml  # Builds the k8s installer ISO
@@ -149,6 +151,31 @@ nix run .#deploy -- .#k8s-server-1  # one node
 ```
 
 `heimdall` (cluster ops + `heimdall ai`) is installed on Darwin from its flake input.
+
+## Gaming PC (NixOS)
+
+`gaming-pc` (`modules/hosts/gaming-pc`): MSI board, Ryzen 7 2700X (AIO cooler), 32GB,
+GTX 1060 6GB, KDE Plasma 6, Steam (Proton-GE), Lutris (Battle.net: WoW, D4, SC2). The OS
+lives on the 240GB SATA SSD (`/dev/sda`, disko, wiped on install); the 1TB NVMe is mounted
+at `/games` by label and is **not** in disko, so reinstalling keeps it.
+
+The GTX 1060 (Pascal) needs `nvidiaPackages.legacy_580` with `open = false`: newer driver
+branches dropped Pascal and the open kernel modules need Turing or newer.
+
+1. Flash the k8s installer ISO (`./scripts/flash-usb.sh`), boot it on the PC (F11 boot menu)
+   on wired ethernet, and note its IP (`ip -4 addr`).
+2. `./scripts/install-gaming-pc.sh <installer-ip>`: shows the disks, asks for confirmation,
+   clears the SSD (signatures plus the first 1.1GB, so stale ESPs from a previous OS aren't
+   reused by disko), installs with nixos-anywhere and generates `hardware-configuration.nix`.
+   The NVMe is wiped and formatted (label `games`) only if no `games` filesystem exists yet
+   (`GAMES_DISK` overrides the device, default `/dev/nvme0n1`).
+3. Commit the generated `hardware-configuration.nix`, log in as `austin`/`changeme` and
+   run `passwd`, add a GitHub SSH key and clone this repo to `~/homelab/nix`, then `rebuild`.
+4. Point the Steam / Lutris libraries at `/games`.
+
+The install builds on the PC under sustained all-core load. Check cooling first: the CPU
+should idle around 35-50°C in the BIOS hardware monitor. Dried thermal paste and a dusty
+radiator once made it climb past 85°C at idle and power off mid-install.
 
 ## Bootstrap on a New Machine
 

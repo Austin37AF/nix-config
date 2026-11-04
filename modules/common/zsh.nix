@@ -24,7 +24,7 @@ in
       alias rebuild="sudo darwin-rebuild switch --flake ~/homelab/nix#austin-m5-pro"
       alias rebuild-home="sudo darwin-rebuild switch --flake ~/homelab/nix#austin-m5-pro-home"
       '' else ''
-      alias rebuild="sudo nixos-rebuild switch --flake ~/homelab/nix#nixos-laptop"
+      alias rebuild="sudo nixos-rebuild switch --flake ~/homelab/nix"
       ''}
       alias dev="nix develop ~/homelab/nix"
       

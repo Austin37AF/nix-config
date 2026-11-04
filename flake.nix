@@ -287,6 +287,7 @@
     # Skip checks:           nix run .#deploy -- --skip-checks
 
     apps.aarch64-darwin.deploy = deploy-rs.apps.aarch64-darwin.default;
+    apps.x86_64-linux.deploy = deploy-rs.apps.x86_64-linux.default;
     
     deploy = {
       sshUser = "k8sadmin";

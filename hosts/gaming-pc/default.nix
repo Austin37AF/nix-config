@@ -1,4 +1,4 @@
-# Gaming PC: Ryzen 7 2700X, GTX 1060 6GB, KDE Plasma 6, Steam / Battle.net (via Lutris)
+# Gaming PC: Ryzen 7 2700X, GTX 1060 6GB, KDE Plasma 6, Steam, Lutris, WoW Forever (battlenet-umu)
 { config, pkgs, lib, ... }:
 let
   commonPackages = import ../../shared/packages.nix { inherit pkgs; };
@@ -7,11 +7,11 @@ in
   imports = [
     ./hardware-configuration.nix
     ../../shared/zsh.nix
-    # OS disk (SATA SSD). nixos-anywhere WIPES it: verify the device with lsblk on the installer before install.
+    # OS disk (SATA SSD). the installer (install-host / nixos-anywhere) WIPES it: verify the device with lsblk on the installer before install.
     (import ../../shared/disko-single-disk.nix { device = "/dev/sda"; })
   ];
 
-  # Games disk (NVMe) is deliberately NOT in disko, so re-running nixos-anywhere never wipes it.
+  # Games disk (NVMe) is deliberately NOT in disko, so reinstalling never wipes it.
   # The installer (./install-hook.sh or scripts/install-gaming-pc.sh) formats it once (label "games") if the label doesn't exist yet.
   fileSystems."/games" = {
     device = "/dev/disk/by-label/games";

@@ -43,9 +43,9 @@ sops hosts/k8s/secrets/k8s.yaml
 ```
 
 **Node host keys are pre-generated.** Each node's SSH host key lives in
-`secrets/host-keys.yaml` (encrypted to your admin key only). Their age
-equivalents are already recipients of `secrets/k8s.yaml` in `.sops.yaml`, and
-`scripts/install-node.sh` installs the key, so nodes can decrypt the k3s token
+`hosts/k8s/secrets/host-keys.yaml` (encrypted to your admin key only). Their age
+equivalents are already recipients of `secrets/k8s.yaml` in `.sops.yaml`, and the
+installer (`install-host` via `install-hook.sh`, or `scripts/install-node.sh`) installs the key, so nodes can decrypt the k3s token
 on first boot. To add or rotate a node key:
 
 ```bash
@@ -59,7 +59,7 @@ sops updatekeys hosts/k8s/secrets/k8s.yaml && rm /tmp/<node>*
 
 Edit `cluster-config.nix`:
 
-- `sshPublicKeys` - Your SSH public key (`cat ~/.ssh/id_ed25519.pub`)
+- `sshPublicKeys` - comes from `shared/ssh-keys.nix` (add your key there: `cat ~/.ssh/id_ed25519.pub`)
 - `network.gateway` - Your router IP
 - `network.interface` - NIC name (usually `enp0s3` or `eth0`)
 - `nodes.*.ip` - Static IPs for each node
@@ -96,7 +96,7 @@ diskutil eject /dev/diskN
 
 ⚠️ **Warning:** Double-check the disk number! Writing to the wrong disk will erase it.
 
-### 6. Initial Deployment (nixos-anywhere)
+### 6. Initial Deployment
 
 Boot each Mac Mini from the USB. It will get a DHCP IP.
 
@@ -108,9 +108,11 @@ Boot each Mac Mini from the USB. It will get a DHCP IP.
 ssh root@<IP> ip -br link
 ```
 
-**Install in order** (server-1 must be first). The script shows the target's disks, asks you
+**Install in order** (server-1 must be first). Either on the node itself
+(`ssh -A root@<IP>`, run `install-host`, pick the node; `install-hook.sh` asks for the admin
+age key or reads `SOPS_AGE_KEY_FILE`), or from the Mac with nixos-anywhere. The script shows the target's disks, asks you
 to confirm, then **wipes** the disk from `cluster-config.nix` (`defaultDisk = "/dev/sda"`, or a
-per-node `disk`), partitions it with `disko.nix` (512M EFI + ext4 root), installs the node's
+per-node `disk`), partitions it with `shared/disko-single-disk.nix` (512M EFI + ext4 root), installs the node's
 SSH host key, and builds on the target (this Mac can't build x86_64-linux):
 
 ```bash
@@ -186,7 +188,7 @@ After initial setup, updates are pushed over SSH with deploy-rs (like Ansible, b
 The easy way is heimdall:
 
 ```bash
-nix flake update nixpkgs             # optional: pick up new packages/kernel
+(cd ~/homelab/nix/hosts/k8s && nix flake update nixpkgs)  # optional: new packages/kernel
 heimdall cluster update --dry-run    # build on the nodes, show what would change
 heimdall cluster update              # deploy to all nodes (or name specific nodes)
 heimdall cluster update --reboot     # deploy, then rolling reboot of nodes with a new kernel
@@ -245,7 +247,7 @@ sudo rm -rf /var/lib/rancher/k3s
 sudo reboot
 ```
 
-Then redeploy with nixos-anywhere.
+Then reinstall it (`install-host` or `scripts/install-node.sh`).
 
 ## File Structure
 
@@ -267,6 +269,6 @@ Shared: ../../shared/disko-single-disk.nix (disk layout), ../../installer/ (ISO)
 
 ## Security Notes
 
-- `clusterToken` in `cluster-config.nix` is sensitive - don't commit to public repos
-- Consider using [sops-nix](https://github.com/Mic92/sops-nix) for secrets management
+- The k3s token lives only in `secrets/k8s.yaml`, encrypted with sops-nix; never put it in plain Nix files
+- Node SSH host keys (`secrets/host-keys.yaml`) are encrypted to the admin age key only
 - SSH password auth is disabled; only key-based auth works after install

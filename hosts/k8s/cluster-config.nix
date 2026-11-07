@@ -31,7 +31,7 @@
   # ============================================
   # Hardware (4x Mac mini Late 2014, A1347, 16GB RAM, 500GB disk)
   # ============================================
-  # Disk that nixos-anywhere WIPES and installs to. Check with `lsblk` on the
+  # Disk that the installer WIPES and installs to. Check with `lsblk` on the
   # booted installer (the USB stick may also show up as /dev/sdX).
   # Override per node by adding `disk = "/dev/...";` to a node below.
   defaultDisk = "/dev/sda";

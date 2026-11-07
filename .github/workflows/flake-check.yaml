@@ -1,7 +1,8 @@
 name: Flake Check
 
 # Every machine in hosts/ is its own flake with its own flake.lock, so each one is
-# checked in its own job: a failure shows up under that host only.
+# checked in its own job (a failure shows up under that host only), and only when it
+# or something it imports changed.
 on:
   push:
     branches: [main]
@@ -9,31 +10,70 @@ on:
   workflow_dispatch:
 
 jobs:
+  # Pick which flakes to check: a host only when its own files change; everything when
+  # shared/ (imported by the hosts) or this workflow changes, or on a manual run.
+  changes:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      pull-requests: read  # paths-filter lists a PR's changed files via the API
+    outputs:
+      matrix: ${{ steps.matrix.outputs.matrix }}
+    steps:
+      - uses: actions/checkout@v4
+
+      - id: filter
+        uses: dorny/paths-filter@v3
+        with:
+          filters: |
+            all:
+              - 'shared/**'
+              - '.github/workflows/flake-check.yaml'
+            root:
+              - 'flake.nix'
+              - 'flake.lock'
+              - 'installer/**'
+            k8s:
+              - 'hosts/k8s/**'
+            gaming-pc:
+              - 'hosts/gaming-pc/**'
+            wsl:
+              - 'hosts/wsl/**'
+            austin-m5-pro:
+              - 'hosts/austin-m5-pro/**'
+
+      - id: matrix
+        env:
+          CHANGES: ${{ steps.filter.outputs.changes }}
+          ALL: ${{ github.event_name == 'workflow_dispatch' || contains(fromJSON(steps.filter.outputs.changes), 'all') }}
+        run: |
+          # One entry per flake. aarch64-darwin can't be checked on Linux, so the Mac
+          # evaluates both systems instead (eval).
+          flakes='[
+            {"name": "root", "dir": ".", "private": false},
+            {"name": "k8s", "dir": "./hosts/k8s", "private": false},
+            {"name": "gaming-pc", "dir": "./hosts/gaming-pc", "private": true},
+            {"name": "wsl", "dir": "./hosts/wsl", "private": true},
+            {"name": "austin-m5-pro", "dir": "./hosts/austin-m5-pro", "private": true,
+             "eval": "darwinConfigurations.austin-m5-pro.system.drvPath darwinConfigurations.austin-m5-pro-home.system.drvPath"}
+          ]'
+          if [ "$ALL" = true ]; then
+            matrix=$(jq -c . <<<"$flakes")
+          else
+            matrix=$(jq -c --argjson c "$CHANGES" 'map(select(.name as $n | $c | index($n)))' <<<"$flakes")
+          fi
+          echo "Checking: $(jq -r 'map(.name) | join(", ")' <<<"$matrix")"
+          echo "matrix=$matrix" >> "$GITHUB_OUTPUT"
+
   flake-check:
     name: ${{ matrix.name }}
+    needs: changes
+    if: needs.changes.outputs.matrix != '[]'
     runs-on: ubuntu-latest
     strategy:
       fail-fast: false
       matrix:
-        include:
-          # Root flake: dev shells + installer ISO
-          - name: root
-            dir: .
-            private: false
-          - name: k8s
-            dir: ./hosts/k8s
-            private: false
-          - name: gaming-pc
-            dir: ./hosts/gaming-pc
-            private: true
-          - name: wsl
-            dir: ./hosts/wsl
-            private: true
-          # aarch64-darwin can't be checked on Linux: evaluate both systems instead
-          - name: austin-m5-pro
-            dir: ./hosts/austin-m5-pro
-            private: true
-            eval: darwinConfigurations.austin-m5-pro.system.drvPath darwinConfigurations.austin-m5-pro-home.system.drvPath
+        include: ${{ fromJSON(needs.changes.outputs.matrix) }}
     steps:
       - name: Checkout
         uses: actions/checkout@v4

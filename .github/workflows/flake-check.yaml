@@ -1,7 +1,7 @@
 name: Flake Check
 
-# Evaluates all outputs and runs deploy-rs checks on x86_64-linux.
-# Catches eval breakage in any host config, not just kubernetes/.
+# Every machine in hosts/ is its own flake with its own flake.lock, so each one is
+# checked in its own job: a failure shows up under that host only.
 on:
   push:
     branches: [main]
@@ -10,7 +10,30 @@ on:
 
 jobs:
   flake-check:
+    name: ${{ matrix.name }}
     runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          # Root flake: dev shells + installer ISO
+          - name: root
+            dir: .
+            private: false
+          - name: k8s
+            dir: ./hosts/k8s
+            private: false
+          - name: gaming-pc
+            dir: ./hosts/gaming-pc
+            private: true
+          - name: wsl
+            dir: ./hosts/wsl
+            private: true
+          # aarch64-darwin can't be checked on Linux: evaluate both systems instead
+          - name: austin-m5-pro
+            dir: ./hosts/austin-m5-pro
+            private: true
+            eval: darwinConfigurations.austin-m5-pro.system.drvPath darwinConfigurations.austin-m5-pro-home.system.drvPath
     steps:
       - name: Checkout
         uses: actions/checkout@v4
@@ -29,10 +52,11 @@ jobs:
           authToken: '${{ secrets.CACHIX_AUTH_TOKEN }}'
         continue-on-error: true  # Don't fail if no cachix token
 
-      # The heimdall input is git+ssh to a private repo; evaluating the flake
-      # fetches all inputs, so the runner needs a key with read access to it.
+      # The heimdall input is git+ssh to a private repo; evaluating a host that uses it
+      # fetches it, so the runner needs a key with read access to it.
       # Set FLAKE_INPUT_SSH_KEY to a read-only deploy key on Austin37AF/heimdall.
       - name: Configure SSH for private flake inputs
+        if: matrix.private
         env:
           FLAKE_INPUT_SSH_KEY: ${{ secrets.FLAKE_INPUT_SSH_KEY }}
         run: |
@@ -46,4 +70,13 @@ jobs:
           ssh-keyscan github.com >> ~/.ssh/known_hosts 2>/dev/null
 
       - name: nix flake check
-        run: nix flake check --print-build-logs
+        if: ${{ !matrix.eval }}
+        run: nix flake check --print-build-logs "${{ matrix.dir }}"
+
+      - name: Evaluate
+        if: ${{ matrix.eval }}
+        run: |
+          for attr in ${{ matrix.eval }}; do
+            echo "$attr"
+            nix eval --raw "${{ matrix.dir }}#$attr"; echo
+          done

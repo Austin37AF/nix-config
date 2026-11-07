@@ -5,44 +5,62 @@ NixOS hosts (gaming PC, NixOS-WSL), and a k3s cluster on Mac minis.
 
 ## Structure
 
+Every machine is a standalone flake in `hosts/<name>/` with its **own `flake.lock`**, so
+updating or breaking one machine never touches another. Shared modules live in `shared/`
+and a machine only gets one if it lists it in its imports (or in its `flake.nix`).
+
 ```
 ~/homelab/nix/
-├── flake.nix                    # Entry point: machines, darwinConfigurations, devShells, nixosConfigurations
-├── modules/
-│   ├── common/
-│   │   ├── home.nix             # Home Manager: git, powerline-go, shell config (all hosts)
-│   │   ├── packages.nix         # Shared package lists: cli, dev, fonts
-│   │   ├── env.nix              # Shared env vars, aliases, powerline config
-│   │   └── zsh.nix              # zsh + rebuild aliases (nixos + darwin)
-│   ├── darwin/
+├── flake.nix                    # Root flake: dev shell + installer ISO only (no machines)
+├── hosts/
+│   ├── austin-m5-pro/           # Work MacBook (nix-darwin): austin-m5-pro + austin-m5-pro-home
+│   │   ├── flake.nix            # darwinConfigurations; own flake.lock
 │   │   ├── default.nix          # System settings, defaults, activation
 │   │   ├── packages.nix         # macOS GUI apps (vim, obsidian, rectangle, ...)
-│   │   ├── homebrew.nix         # Homebrew brews and casks (all Macs)
+│   │   ├── homebrew.nix         # Homebrew brews and casks
 │   │   ├── home.nix             # Darwin HM: ssh config, Devin Desktop editor settings merge
-│   │   ├── devin/               # Devin CLI: AGENTS.md, mcp_config.json, config.json merge, permissions
 │   │   ├── cert-pem.nix         # eMudhra response: prunes distrusted roots from /etc/ssl/cert.pem
-│   │   └── zsh.nix              # Darwin-specific zsh
-│   ├── devshell.nix             # `nix develop` dev shell (also loaded by direnv)
-│   ├── hosts/work/              # Work-machine-only modules (imported by the work config)
-│   │   ├── zscaler.nix          # Zscaler root in the Nix CA bundle + cert env vars
-│   │   ├── zscaler-root.crt     # The Zscaler root cert
-│   │   ├── homebrew.nix         # Work brews (gimme-aws-creds)
-│   │   ├── direnv.nix           # direnv + nix-direnv, .envrc, .actrc, kind cluster.yaml
-│   │   └── devin/               # Work Devin addendum + AGENTS.local.md/skills symlinks
-│   ├── hosts/gaming-pc/         # NixOS gaming PC (Plasma 6, NVIDIA 580 legacy, Steam)
-│   ├── hosts/wsl/               # NixOS-WSL on the Windows PC (CLI tools, zsh, Home Manager)
-│   ├── local-ai/                # LM Studio + Zed (local LLM) config; not on k8s nodes
-│   └── kubernetes/              # NixOS k8s cluster configs (nodes, disko, hardening)
-├── flakes/
-│   └── wow-forever/             # Sub-flake (path input): WoW Forever via battlenet-umu, used by gaming-pc
-├── scripts/                     # install-node.sh, install-gaming-pc.sh (nixos-anywhere wrappers)
-├── secrets/                     # sops-encrypted k8s secrets
+│   │   ├── zsh.nix              # zsh + rebuild/rebuild-home aliases
+│   │   ├── local-ai/            # LM Studio + Zed (local LLM) config
+│   │   └── work/                # Work-only (austin-m5-pro, not -home): Zscaler, work brews, direnv, Devin addendum
+│   ├── gaming-pc/               # NixOS gaming PC (Plasma 6, NVIDIA 580 legacy, Steam)
+│   │   ├── flake.nix            # own flake.lock
+│   │   ├── default.nix, home.nix, hardware-configuration.nix
+│   │   ├── wow-forever/         # WoW Forever via battlenet-umu + declarative addons
+│   │   └── install-hook.sh      # install-host hook: formats the games disk once
+│   ├── wsl/                     # NixOS-WSL on the Windows PC (own flake.lock)
+│   └── k8s/                     # k3s cluster nodes, deploy-rs, sops secrets (own flake.lock)
+├── shared/                      # Opt-in modules, imported by hosts that want them
+│   ├── home.nix                 # Home Manager: git, powerline-go, shell config
+│   ├── packages.nix             # Package lists: cli, dev, fonts
+│   ├── env.nix                  # Env vars, aliases, powerline config
+│   ├── zsh.nix                  # zsh + direnv hook (NixOS)
+│   ├── devin/                   # Devin CLI: AGENTS.md, mcp_config.json, config.json merge, permissions
+│   ├── disko-single-disk.nix    # GPT + ESP + ext4 root disk layout
+│   ├── ssh-keys.nix             # Admin SSH public keys
+│   └── devshell.nix             # `nix develop` dev shell (also loaded by direnv)
+├── installer/                   # Installer ISO for all NixOS hosts + `install-host` menu
+├── scripts/                     # update.sh, flash-usb.sh, install-node.sh, install-gaming-pc.sh
 ├── devbox.json                  # Cluster-management shell (sops, age, kubectl, helm, k9s)
-└── .github/workflows/build-iso.yaml  # Builds the k8s installer ISO
+└── .github/workflows/           # flake-check (one job per host), build-iso
 ```
 
-Two hosts share the same machine: `austin-m5-pro` (work, adds `modules/hosts/work`)
-and `austin-m5-pro-home` (personal, no work modules). Rebuild with `rebuild` /
+### Adding a machine
+
+1. `mkdir hosts/<name>` and add a `flake.nix` (copy the closest host's) plus its modules.
+2. Import only the shared modules it should have, e.g. `../../shared/zsh.nix`. Leave a line
+   out and the machine doesn't get it.
+3. `nix flake lock ./hosts/<name>`, `git add hosts/<name>` (flakes only see Git-tracked files).
+4. Add it to the matrix in `.github/workflows/flake-check.yaml`.
+5. NixOS with a disko layout: it shows up in the installer's `install-host` menu automatically.
+
+### Updating inputs
+
+`./scripts/update.sh <host>` updates one machine's lock (`./scripts/update.sh all` for
+everything, `./scripts/update.sh k8s -- nixpkgs` for one input). Rebuild that machine after.
+
+Two configs share the work Mac: `austin-m5-pro` (work, adds `./work`) and
+`austin-m5-pro-home` (personal, no work modules). Rebuild with `rebuild` /
 `rebuild-home` (needs sudo).
 
 ## Quick Commands
@@ -51,7 +69,7 @@ and `austin-m5-pro-home` (personal, no work modules). Rebuild with `rebuild` /
 rebuild                    # darwin-rebuild switch (work config); primes the SSH agent first so root can fetch the private heimdall input
 rebuild-home               # switch to the personal config
 dev                        # nix dev shell manually (outside direnv dirs)
-nix flake update           # update all inputs
+./scripts/update.sh austin-m5-pro  # update this Mac's inputs (each host has its own lock)
 ```
 
 ## Certificates / Zscaler (work)
@@ -61,8 +79,8 @@ nix flake update           # update all inputs
   linked at `~/certs/bundle.crt` for tools that need a stable path
   (`http.sslCAInfo`, gcloud `custom_ca_certs_file`).
 - `SSL_CERT_FILE`, `REQUESTS_CA_BUNDLE`, `NODE_EXTRA_CA_CERTS` and
-  `NIX_SSL_CERT_FILE` all point at it (`modules/hosts/work/zscaler.nix`,
-  `modules/common/env.nix`).
+  `NIX_SSL_CERT_FILE` all point at it (`hosts/austin-m5-pro/work/zscaler.nix`,
+  `shared/env.nix`).
 - `cert-pem.nix` (eMudhra compromise): every rebuild, an activation step
   removes distrusted roots (emSign ECC Root CA - G3, AAA Certificate Services)
   from `/etc/ssl/cert.pem`, keeping a backup at `/etc/ssl/cert.pem.orig`.
@@ -70,9 +88,9 @@ nix flake update           # update all inputs
 
 ## Devin (CLI + Desktop)
 
-- `~/.config/devin/AGENTS.md`: global rules — base set (`modules/common/devin`)
+- `~/.config/devin/AGENTS.md`: global rules — base set (`shared/devin`)
   plus a work addendum (Zscaler, kubectl/helm/Atlantis guardrails,
-  `modules/hosts/work/devin`).
+  `hosts/austin-m5-pro/work/devin`).
 - `mcp_config.json`: declarative user-scope MCP servers (Atlassian).
 - `config.json`: **merged** on activation, not symlinked — Devin mutates it
   (approvals, keymap, hooks). Managed keys win, `permissions.allow/ask/deny`
@@ -80,7 +98,7 @@ nix flake update           # update all inputs
   settings include the Fusion default model and the permission lists. Note:
   removing an entry from the Nix lists does not remove it from the file.
 - Per-repo `AGENTS.local.md` notes and `~/.config/devin/skills/*` are
-  **out-of-store symlinks** into `modules/hosts/work/devin/` — edits apply
+  **out-of-store symlinks** into `hosts/austin-m5-pro/work/devin/` — edits apply
   without a rebuild. `AGENTS.local.md` is ignored globally via
   `programs.git.ignores`.
 - Skills:
@@ -92,7 +110,7 @@ nix flake update           # update all inputs
   | `go-bump-release` | Bump a Go repo's version, PR, release, verify published binaries |
   | `ci-local` | Run a repo's GitHub Actions jobs locally with `act` |
 
-- Permissions (in `modules/common/devin/default.nix`):
+- Permissions (in `shared/devin/default.nix`):
   - allow: read-only git, `nix eval/build/flake show|metadata|check`, `darwin-rebuild build`, `gh pr view/diff/checks`, terraform/tofu `fmt`/`validate`, `helm template/lint`, `pre-commit run`, `aws sts get-caller-identity`
   - ask: terraform/tofu `apply`/`destroy`, mutating kubectl, `helm install/upgrade/uninstall`
   - deny: `sudo`, `darwin-rebuild switch/activate`, `git push --force*`
@@ -101,8 +119,8 @@ nix flake update           # update all inputs
 - Devin Desktop's `settings.json` (formerly Windsurf) is also merged on
   activation (managed keys win; stays a regular file).
 - To add a repo to the personal notes: drop a markdown file in
-  `modules/hosts/work/devin/repos/` and add one line to `outOfStoreLinks` in
-  `modules/hosts/work/devin/default.nix`.
+  `hosts/austin-m5-pro/work/devin/repos/` and add one line to `outOfStoreLinks` in
+  `hosts/austin-m5-pro/work/devin/default.nix`.
 
 ## Work dev shell via direnv
 
@@ -139,20 +157,20 @@ nix flake update           # update all inputs
   auth/publish jobs (OIDC, GitHub App tokens, pushes, deploys) can't run
   locally — run `pull_request` jobs only, `--rm` containers.
 
-## Local AI (`modules/local-ai`)
+## Local AI (`hosts/austin-m5-pro/local-ai`)
 
 - LM Studio + Zed (Homebrew casks); Zed is configured against LM Studio's local server (Qwen3.6-27B) with a `pr-review` skill in `~/.agents/skills`.
 - One-time model download (after launching LM Studio once): `lms get qwen/qwen3.6-27b --mlx --select` and pick the 6-bit quant.
 - Day to day: `heimdall ai up | down | status`.
 
-## Homelab Kubernetes Cluster (`modules/kubernetes`)
+## Homelab Kubernetes Cluster (`hosts/k8s`)
 
-NixOS k3s cluster on Mac minis; full guide in [`modules/kubernetes/README.md`](modules/kubernetes/README.md).
+NixOS k3s cluster on Mac minis; full guide in [`hosts/k8s/README.md`](hosts/k8s/README.md).
 
 ```bash
 devbox shell                        # repo root: sops, age, kubectl, helm, k9s
-sops secrets/k8s.yaml               # edit secrets
-nix build .#k8s-installer-iso       # installer ISO (CI also publishes it to a rolling release)
+sops hosts/k8s/secrets/k8s.yaml     # edit secrets
+cd hosts/k8s
 nix run .#deploy                    # deploy all nodes (or: heimdall cluster update)
 nix run .#deploy -- .#k8s-server-1  # one node
 ```
@@ -161,7 +179,7 @@ nix run .#deploy -- .#k8s-server-1  # one node
 
 ## Gaming PC (NixOS)
 
-`gaming-pc` (`modules/hosts/gaming-pc`): MSI board, Ryzen 7 2700X (AIO cooler), 32GB,
+`gaming-pc` (`hosts/gaming-pc`): MSI board, Ryzen 7 2700X (AIO cooler), 32GB,
 GTX 1060 6GB, KDE Plasma 6, Steam (Proton-GE), Lutris (Battle.net: WoW, D4, SC2). The OS
 lives on the 240GB SATA SSD (`/dev/sda`, disko, wiped on install); the 1TB NVMe is mounted
 at `/games` by label and is **not** in disko, so reinstalling keeps it.
@@ -169,9 +187,11 @@ at `/games` by label and is **not** in disko, so reinstalling keeps it.
 The GTX 1060 (Pascal) needs `nvidiaPackages.legacy_580` with `open = false`: newer driver
 branches dropped Pascal and the open kernel modules need Turing or newer.
 
-1. Flash the k8s installer ISO (`./scripts/flash-usb.sh`), boot it on the PC (F11 boot menu)
+1. Flash the installer ISO (`./scripts/flash-usb.sh`), boot it on the PC (F11 boot menu)
    on wired ethernet, and note its IP (`ip -4 addr`).
-2. `./scripts/install-gaming-pc.sh <installer-ip>`: shows the disks, asks for confirmation,
+2. Either `ssh -A root@<installer-ip>` and run `install-host` (pick `gaming-pc`; it runs
+   `hosts/gaming-pc/install-hook.sh` for the games disk), or from the Mac
+   `./scripts/install-gaming-pc.sh <installer-ip>`: shows the disks, asks for confirmation,
    clears the SSD (signatures plus the first 1.1GB, so stale ESPs from a previous OS aren't
    reused by disko), installs with nixos-anywhere and generates `hardware-configuration.nix`.
    The NVMe is wiped and formatted (label `games`) only if no `games` filesystem exists yet
@@ -179,7 +199,7 @@ branches dropped Pascal and the open kernel modules need Turing or newer.
 3. Commit the generated `hardware-configuration.nix`, log in as `austin`/`changeme` and
    run `passwd`. Create the PC's GitHub key (`ssh-keygen -t ed25519 -C gaming-pc -f ~/.ssh/gaming-pc`,
    then `gh ssh-key add` it), clone this repo to `~/homelab/nix` and run the first switch from the
-   Mac with agent forwarding: `ssh -A -t austin@<ip> 'nix flake archive ~/homelab/nix && sudo nixos-rebuild switch --flake ~/homelab/nix'`.
+   Mac with agent forwarding: `ssh -A -t austin@<ip> 'nix flake archive ~/homelab/nix/hosts/gaming-pc && sudo nixos-rebuild switch --flake ~/homelab/nix/hosts/gaming-pc#gaming-pc'`.
    After that, `rebuild` on the PC builds as `austin` (Home Manager points GitHub at
    `~/.ssh/gaming-pc`) and activates with sudo.
 4. Point the Steam / Lutris libraries at `/games`.
@@ -190,12 +210,12 @@ radiator once made it climb past 85°C at idle and power off mid-install.
 
 ## WSL (NixOS-WSL)
 
-`wsl` (`modules/hosts/wsl`): NixOS-WSL on the Windows PC, default user `nixos`. Shared CLI
-packages, zsh with the powerline prompt, Home Manager (`common/home.nix`: git, prompt
+`wsl` (`hosts/wsl`): NixOS-WSL on the Windows PC, default user `nixos`. Shared CLI
+packages, zsh with the powerline prompt, Home Manager (`shared/home.nix`: git, prompt
 scripts) and heimdall. The repo lives at `~/repos/nix-config`; a tmpfiles symlink provides
 `~/homelab/nix` for the shared aliases. zsh is the default shell for all users.
 
-- `modules/hosts/wsl/home.nix` merges Devin Desktop settings into the **Windows**
+- `hosts/wsl/home.nix` merges Devin Desktop settings into the **Windows**
   `%APPDATA%\Devin\User\settings.json` (via `/mnt/c`): the default integrated terminal is
   `wsl.exe -d NixOS` and windows restore (so a WSL remote window reopens). Managed keys
   win, the rest of the file is kept.
@@ -203,13 +223,13 @@ scripts) and heimdall. The repo lives at `~/repos/nix-config`; a tmpfiles symlin
   the TTFs to `%LOCALAPPDATA%\Microsoft\Windows\Fonts` and registers them under
   `HKCU\...\CurrentVersion\Fonts` with `reg.exe`. It's also the Devin Desktop terminal font.
 
-- `rebuild` runs `nixos-rebuild switch --flake ~/homelab/nix#wsl --sudo`: it builds as
+- `rebuild` runs `nixos-rebuild switch --flake ~/homelab/nix/hosts/wsl#wsl --sudo`: it builds as
   `nixos` (so the private heimdall input is fetched with the user's SSH key) and only
   activates as root.
 - First switch from a stock NixOS-WSL install (flakes not enabled yet):
   ```bash
   NIX_CONFIG="experimental-features = nix-command flakes" \
-    nixos-rebuild switch --flake ~/repos/nix-config#wsl --sudo
+    nixos-rebuild switch --flake ~/repos/nix-config/hosts/wsl#wsl --sudo
   ```
   Then `wsl --shutdown` from Windows to apply the hostname and login shell.
 
@@ -237,16 +257,16 @@ SOPS. SOPS would only move the problem: decrypting needs an age key copied over 
    GIT_SSH_COMMAND="ssh -i ~/.ssh/$KEY" git clone git@github.com:Austin37AF/heimdall.git ~/homelab/heimdall
    ```
 
-4. Add the machine to `flake.nix`: an entry in `machines` (`name`, `sshKey = "$KEY"`) and a
-   `darwinConfigurations.<name> = mkDarwin machines.<name> [ ];` (add `workModules` for work Macs).
-   Commit and push from either machine.
+4. Add the machine as `hosts/<name>/` (copy `hosts/austin-m5-pro`, set `machine` in its
+   `flake.nix` to `name`/`sshKey = "$KEY"`, drop `./work` unless it's a work Mac), then
+   `nix flake lock ./hosts/<name>`. Commit and push from either machine.
 
 5. Pre-fetch inputs as your user, then switch. The first switch runs as root before the
    SSH-agent passthrough exists, so the private heimdall input must already be in the store:
    ```bash
    ssh-add ~/.ssh/$KEY
-   nix flake archive ~/homelab/nix
-   sudo nix run nix-darwin -- switch --flake ~/homelab/nix#<name>
+   nix flake archive ~/homelab/nix/hosts/<name>
+   sudo nix run nix-darwin -- switch --flake ~/homelab/nix/hosts/<name>#<name>
    ```
 
 6. Subsequent rebuilds: `rebuild` (and `rebuild-home` on machines with a home variant).
@@ -257,7 +277,7 @@ SOPS. SOPS would only move the problem: decrypting needs an age key copied over 
    age-keygen -o ~/.config/sops/age/keys.txt
    ```
 
-`~/.ssh/config` is managed by home-manager (`modules/darwin/home.nix`); put ad-hoc hosts in
+`~/.ssh/config` is managed by home-manager (`hosts/austin-m5-pro/home.nix`); put ad-hoc hosts in
 `~/.ssh/config.local`.
 
 ## Manual Steps (New Machine)
@@ -269,13 +289,13 @@ SOPS. SOPS would only move the problem: decrypting needs an age key copied over 
 ## What's Managed
 
 ### Nix Packages (`darwin/default.nix`, `packages.nix`)
-- CLI tools (`packages.nix` cli) + GUI apps (`modules/darwin/packages.nix` gui) system-wide
+- CLI tools (`packages.nix` cli) + GUI apps (`hosts/austin-m5-pro/packages.nix` gui) system-wide
 - Fonts (JetBrainsMono Nerd Font)
 
 ### Homebrew
-- `modules/darwin/homebrew.nix` (all Macs): brews `direnv`; casks `docker-desktop`, `google-chrome`, `raycast`, `slack`, `stats`, `devin-desktop`. `onActivation.upgrade` + `cleanup = "zap"` — anything not declared gets removed on rebuild. Taps pinned via nix-homebrew flake inputs.
-- `modules/hosts/work/homebrew.nix` (work only): `gimme-aws-creds`.
-- `modules/local-ai/darwin.nix`: casks `lm-studio`, `zed`.
+- `hosts/austin-m5-pro/homebrew.nix` (both configs): brews `direnv`; casks `docker-desktop`, `google-chrome`, `raycast`, `slack`, `stats`, `devin-desktop`. `onActivation.upgrade` + `cleanup = "zap"` — anything not declared gets removed on rebuild. Taps pinned via nix-homebrew flake inputs.
+- `hosts/austin-m5-pro/work/homebrew.nix` (work only): `gimme-aws-creds`.
+- `hosts/austin-m5-pro/local-ai/darwin.nix`: casks `lm-studio`, `zed`.
 
 ### System Defaults (`darwin/default.nix`)
 - Dock: autohide, persistent apps
@@ -285,7 +305,7 @@ SOPS. SOPS would only move the problem: decrypting needs an age key copied over 
 - Spotlight: disabled (for Raycast)
 - Touch ID: enabled for sudo
 
-### Home Manager (`modules/common/home.nix`, `modules/darwin/home.nix`)
+### Home Manager (`shared/home.nix`, `hosts/austin-m5-pro/home.nix`)
 - Git config (user, email, default branch, global ignores for agent files)
 - Powerline-go prompt with custom modules (`~/.local/bin/powerline-go-mynix`, `powerline-go-mykube`)
 - Zsh completions (sparkctl, valhalla, kubectl)
@@ -300,7 +320,7 @@ SOPS. SOPS would only move the problem: decrypting needs an age key copied over 
 - **cli**: awscli2, kubectl, k9s, gh, pre-commit, gcloud (gke-auth-plugin), jq, yq, nixd, devbox, icloudpd, prettier
 - **dev**: go, python3+pip, opentofu, powerline-go, helm + helm-unittest, act, kyverno, kubeconform, kind
 - **fonts**: JetBrainsMono Nerd Font
-- **gui** (`modules/darwin/packages.nix`): vim, mkalias, obsidian, alt-tab, hidden-bar, rectangle, the-unarchiver
+- **gui** (`hosts/austin-m5-pro/packages.nix`): vim, mkalias, obsidian, alt-tab, hidden-bar, rectangle, the-unarchiver
 
 ### Shared Environment (`env.nix`)
 - **vars**: PATH, GOPATH, Docker platform, GKE auth plugin

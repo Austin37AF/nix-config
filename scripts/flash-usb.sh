@@ -1,9 +1,9 @@
 #!/usr/bin/env bash
 set -euo pipefail
 
-# Flash the K8s installer ISO to a USB drive safely
+# Flash the installer ISO to a USB drive safely
 # Usage: ./scripts/flash-usb.sh [iso-path]
-# Without a path, downloads the latest CI build from the `k8s-installer` release.
+# Without a path, downloads the latest CI build from the `nixos-installer` release.
 
 ISO_PATH="${1:-}"
 cd "$(dirname "$0")/.."
@@ -11,11 +11,11 @@ cd "$(dirname "$0")/.."
 if [[ -n "$ISO_PATH" ]]; then
     ISO_FILE="$ISO_PATH"
 else
-    ISO_FILE="./iso/k8s-installer.iso"
+    ISO_FILE="./iso/nixos-installer.iso"
     mkdir -p ./iso
     echo "⬇️  Downloading latest installer ISO from GitHub release..."
-    gh release download k8s-installer -R Austin37AF/nix-config -p k8s-installer.iso -D ./iso --clobber
-    gh release view k8s-installer -R Austin37AF/nix-config --json body -q .body
+    gh release download nixos-installer -R Austin37AF/nix-config -p nixos-installer.iso -D ./iso --clobber
+    gh release view nixos-installer -R Austin37AF/nix-config --json body -q .body
 fi
 
 if [[ ! -f "$ISO_FILE" ]]; then

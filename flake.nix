@@ -224,11 +224,25 @@
       # ============================================
       #
       # Install: ./scripts/install-gaming-pc.sh <installer-ip>  (see README)
-      # Rebuild on the PC: `rebuild`. Not managed by deploy-rs.
+      # Rebuild on the PC: `rebuild` (builds as the user, activates with sudo). Not managed by deploy-rs.
 
       "gaming-pc" = nixpkgs.lib.nixosSystem {
         system = "x86_64-linux";
-        modules = [ ./modules/hosts/gaming-pc disko.nixosModules.disko ];
+        modules = [
+          ./modules/hosts/gaming-pc
+          disko.nixosModules.disko
+          { system.configurationRevision = self.rev or self.dirtyRev or null; }
+          { environment.systemPackages = [ heimdall.packages.x86_64-linux.default ]; }
+          home-manager.nixosModules.home-manager
+          {
+            home-manager.useGlobalPkgs = true;
+            home-manager.useUserPackages = true;
+            home-manager.backupFileExtension = "hm-backup";
+            home-manager.users.austin = {
+              imports = [ ./modules/common/home.nix ./modules/hosts/gaming-pc/home.nix ];
+            };
+          }
+        ];
       };
 
       # ============================================

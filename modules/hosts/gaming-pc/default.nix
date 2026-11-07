@@ -1,5 +1,8 @@
 # Gaming PC: Ryzen 7 2700X, GTX 1060 6GB, KDE Plasma 6, Steam / Battle.net (via Lutris)
-{ config, pkgs, ... }:
+{ config, pkgs, lib, ... }:
+let
+  commonPackages = import ../../common/packages.nix { inherit pkgs; };
+in
 {
   imports = [
     ./hardware-configuration.nix
@@ -82,14 +85,28 @@
   };
   programs.gamemode.enable = true;
 
-  environment.systemPackages = with pkgs; [
+  environment.systemPackages = commonPackages.cli ++ (with pkgs; [
     lutris
     winetricks
     mangohud
     vim
     git
     htop
-  ];
+  ]);
+  fonts.packages = commonPackages.fonts;
+
+  # Prebuilt binaries (editor remote servers, Devin CLI, etc.)
+  programs.nix-ld.enable = true;
+
+  programs.ssh.knownHosts.github = {
+    hostNames = [ "github.com" ];
+    publicKey = "ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIOMqqnkVzrm0SdG6UOoqKLsabgH5C9okWi0dh2l9GKJl";
+  };
+
+  # Build as the user (private heimdall input over the user's SSH key), activate with sudo
+  programs.zsh.interactiveShellInit = lib.mkAfter ''
+    alias rebuild="nixos-rebuild switch --flake ~/homelab/nix#gaming-pc --sudo"
+  '';
 
   programs.zsh.enable = true;
   users.users.austin = {

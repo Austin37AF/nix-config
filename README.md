@@ -105,7 +105,7 @@ nix flake update           # update all inputs
 ## Work dev shell via direnv
 
 - `.envrc` in `~/brt-projects` and `~/sparkai-projects` (Mac) and `~/repos`
-  (WSL) runs `use flake ~/homelab/nix`; nix-direnv caches the shell (second
+  (WSL, gaming PC) runs `use flake ~/homelab/nix`; nix-direnv caches the shell (second
   entry ~0.2s). `direnv.toml` whitelists those exact paths only — a repo's
   own `.envrc` needs a one-time `direnv allow`.
 - This repo also commits a `.envrc` (`use flake`), whitelisted on both hosts
@@ -175,7 +175,11 @@ branches dropped Pascal and the open kernel modules need Turing or newer.
    The NVMe is wiped and formatted (label `games`) only if no `games` filesystem exists yet
    (`GAMES_DISK` overrides the device, default `/dev/nvme0n1`).
 3. Commit the generated `hardware-configuration.nix`, log in as `austin`/`changeme` and
-   run `passwd`, add a GitHub SSH key and clone this repo to `~/homelab/nix`, then `rebuild`.
+   run `passwd`. Create the PC's GitHub key (`ssh-keygen -t ed25519 -C gaming-pc -f ~/.ssh/gaming-pc`,
+   then `gh ssh-key add` it), clone this repo to `~/homelab/nix` and run the first switch from the
+   Mac with agent forwarding: `ssh -A -t austin@<ip> 'nix flake archive ~/homelab/nix && sudo nixos-rebuild switch --flake ~/homelab/nix'`.
+   After that, `rebuild` on the PC builds as `austin` (Home Manager points GitHub at
+   `~/.ssh/gaming-pc`) and activates with sudo.
 4. Point the Steam / Lutris libraries at `/games`.
 
 The install builds on the PC under sustained all-core load. Check cooling first: the CPU

@@ -41,7 +41,10 @@
   users.users.root.openssh.authorizedKeys.keys = import ../shared/ssh-keys.nix;
   
   # Fallback password if SSH key not set yet
+  # (the installer profile sets an empty initialHashedPassword; clear it so only one is set)
+  users.users.root.initialHashedPassword = lib.mkForce null;
   users.users.root.initialPassword = "nixos";
+  users.users.nixos.initialHashedPassword = lib.mkForce null;
   users.users.nixos.initialPassword = "nixos";
 
   # DHCP for initial boot (hosts apply their own network config after install)

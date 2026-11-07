@@ -2,7 +2,7 @@
 { pkgs, lib, ... }:
 let
   env = import ./env.nix;
-  isDarwin = pkgs.stdenv.isDarwin;
+  isDarwin = pkgs.stdenv.hostPlatform.isDarwin;
 in
 {
   programs.zsh = {

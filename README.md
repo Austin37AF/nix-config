@@ -42,7 +42,7 @@ and a machine only gets one if it lists it in its imports (or in its `flake.nix`
 ├── installer/                   # Installer ISO for all NixOS hosts + `install-host` menu
 ├── scripts/                     # update.sh, flash-usb.sh, install-node.sh, install-gaming-pc.sh
 ├── devbox.json                  # Cluster-management shell (sops, age, kubectl, helm, k9s)
-└── .github/workflows/           # flake-check (one job per host), build-iso
+└── .github/workflows/           # flake-check (one job per changed host), build-iso
 ```
 
 ### Adding a machine
@@ -51,8 +51,16 @@ and a machine only gets one if it lists it in its imports (or in its `flake.nix`
 2. Import only the shared modules it should have, e.g. `../../shared/zsh.nix`. Leave a line
    out and the machine doesn't get it.
 3. `nix flake lock ./hosts/<name>`, `git add hosts/<name>` (flakes only see Git-tracked files).
-4. Add it to the matrix in `.github/workflows/flake-check.yaml`.
+4. In `.github/workflows/flake-check.yaml`, add it to the `flakes` list and give it a
+   `hosts/<name>/**` paths filter in the `changes` job.
 5. NixOS with a disko layout: it shows up in the installer's `install-host` menu automatically.
+
+### CI
+
+`flake-check` checks only the flakes whose files changed: `hosts/<name>/**` checks that host,
+`flake.nix`/`flake.lock`/`installer/**` the root flake, and `shared/**` or the workflow itself
+checks every host. Docs-only changes skip it. A manual run (`workflow_dispatch`) checks all.
+The Mac job evaluates both darwin systems (aarch64-darwin can't be built on the Linux runner).
 
 ### Updating inputs
 
@@ -125,7 +133,7 @@ dev                        # nix dev shell manually (outside direnv dirs)
 ## Work dev shell via direnv
 
 - `.envrc` in `~/brt-projects` and `~/sparkai-projects` (Mac) and `~/repos`
-  (WSL, gaming PC) runs `use flake ~/homelab/nix`; nix-direnv caches the shell (second
+  (WSL, gaming PC) runs `use flake ~/homelab/nix` (the root flake's dev shell); nix-direnv caches the shell (second
   entry ~0.2s). `direnv.toml` whitelists those exact paths only — a repo's
   own `.envrc` needs a one-time `direnv allow`.
 - This repo also commits a `.envrc` (`use flake`), whitelisted on both hosts
@@ -175,12 +183,14 @@ nix run .#deploy                    # deploy all nodes (or: heimdall cluster upd
 nix run .#deploy -- .#k8s-server-1  # one node
 ```
 
-`heimdall` (cluster ops + `heimdall ai`) is installed on Darwin from its flake input.
+`heimdall` (cluster ops + `heimdall ai`) is installed on the Mac, gaming-pc and WSL from each
+host's heimdall flake input. `heimdall cluster update` deploys from `~/homelab/nix/hosts/k8s`.
 
 ## Gaming PC (NixOS)
 
 `gaming-pc` (`hosts/gaming-pc`): MSI board, Ryzen 7 2700X (AIO cooler), 32GB,
-GTX 1060 6GB, KDE Plasma 6, Steam (Proton-GE), Lutris (Battle.net: WoW, D4, SC2). The OS
+GTX 1060 6GB, KDE Plasma 6, Steam (Proton-GE), Lutris, WoW Forever (Battle.net via
+battlenet-umu, `hosts/gaming-pc/wow-forever`), Discord, Chrome, Bambu Studio. The OS
 lives on the 240GB SATA SSD (`/dev/sda`, disko, wiped on install); the 1TB NVMe is mounted
 at `/games` by label and is **not** in disko, so reinstalling keeps it.
 
@@ -245,7 +255,7 @@ SOPS. SOPS would only move the problem: decrypting needs an age key copied over 
 
 2. Create this machine's GitHub key and register it (browser login, no key needed yet):
    ```bash
-   KEY=<machine-name>   # e.g. austin-mini; becomes machines.<name>.sshKey
+   KEY=<machine-name>   # e.g. austin-mini; becomes machine.sshKey in hosts/<name>/flake.nix
    ssh-keygen -t ed25519 -C "$KEY" -f ~/.ssh/$KEY
    nix shell nixpkgs#gh -c sh -c "gh auth login && gh ssh-key add ~/.ssh/$KEY.pub --title $KEY"
    ```
@@ -288,7 +298,7 @@ SOPS. SOPS would only move the problem: decrypting needs an age key copied over 
 
 ## What's Managed
 
-### Nix Packages (`darwin/default.nix`, `packages.nix`)
+### Nix Packages (`hosts/austin-m5-pro/default.nix`, `shared/packages.nix`)
 - CLI tools (`packages.nix` cli) + GUI apps (`hosts/austin-m5-pro/packages.nix` gui) system-wide
 - Fonts (JetBrainsMono Nerd Font)
 
@@ -297,7 +307,7 @@ SOPS. SOPS would only move the problem: decrypting needs an age key copied over 
 - `hosts/austin-m5-pro/work/homebrew.nix` (work only): `gimme-aws-creds`.
 - `hosts/austin-m5-pro/local-ai/darwin.nix`: casks `lm-studio`, `zed`.
 
-### System Defaults (`darwin/default.nix`)
+### System Defaults (`hosts/austin-m5-pro/default.nix`)
 - Dock: autohide, persistent apps
 - Finder: show extensions, path bar, status bar
 - Trackpad: right-click enabled
@@ -312,17 +322,17 @@ SOPS. SOPS would only move the problem: decrypting needs an age key copied over 
 - SSH config (`~/.ssh/config.local` for ad-hoc hosts)
 - Devin CLI + Devin Desktop config (above)
 
-### Dev Shell (`devshell.nix`)
+### Dev Shell (`shared/devshell.nix`)
 - All CLI tools plus dev-only: go, python3, opentofu, kyverno, kubeconform, kind, act, devbox, helm (with helm-unittest)
 - Enter with `dev`, or automatically via direnv under the work dirs
 
-### Shared Packages (`packages.nix`)
+### Shared Packages (`shared/packages.nix`)
 - **cli**: awscli2, kubectl, k9s, gh, pre-commit, gcloud (gke-auth-plugin), jq, yq, nixd, devbox, icloudpd, prettier
 - **dev**: go, python3+pip, opentofu, powerline-go, helm + helm-unittest, act, kyverno, kubeconform, kind
 - **fonts**: JetBrainsMono Nerd Font
 - **gui** (`hosts/austin-m5-pro/packages.nix`): vim, mkalias, obsidian, alt-tab, hidden-bar, rectangle, the-unarchiver
 
-### Shared Environment (`env.nix`)
+### Shared Environment (`shared/env.nix`)
 - **vars**: PATH, GOPATH, Docker platform, GKE auth plugin
 - **aliases**: k, k_dd, tf, terraform, tf-init-all, google-auth, ll, brt, devin
 - **powerlineBash**: Bash prompt config for dev shell
@@ -346,7 +356,7 @@ Custom modules display shell and Kubernetes context:
 | mini | minikube |
 | context name (grey) | Any other context |
 
-Namespace is shown only when not `default`. To always show namespace, set `showKubeNamespace = true` in `env.nix`.
+Namespace is shown only when not `default`. To always show namespace, set `showKubeNamespace = true` in `shared/env.nix`.
 
 ## Shell Workflow
 
@@ -363,7 +373,7 @@ exit              # Back to base zsh
 
 ## Garbage Collection
 
-Runs weekly, deletes generations older than 14 days. Manual run:
+Runs weekly on every host, deletes generations older than 14 days. Manual run:
 ```bash
 nix-collect-garbage -d
 ```

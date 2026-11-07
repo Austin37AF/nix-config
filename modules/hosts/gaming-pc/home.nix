@@ -5,6 +5,13 @@
 
   home.packages = [ pkgs.devin-desktop pkgs.devin-cli ];
 
+  # Battle.net + WoW Forever launchers and declarative addons (flakes/wow-forever)
+  programs.wow-forever = {
+    enable = true;
+    prefix = "/games/battlenet-umu/prefix"; # games NVMe, not the OS SSD
+    addons = [ ];
+  };
+
   # GitHub key for this machine (~/.ssh/gaming-pc); ad-hoc hosts go in ~/.ssh/config.local
   programs.ssh = {
     enable = true;

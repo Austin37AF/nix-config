@@ -42,9 +42,13 @@
     # Homelab CLI (cluster ops, `heimdall ai` for the local LLM server)
     heimdall.url = "git+ssh://git@github.com/Austin37AF/heimdall";
     heimdall.inputs.nixpkgs.follows = "nixpkgs";
+
+    # WoW Forever via Battle.net/umu-launcher + declarative addons (gaming-pc only)
+    wow-forever.url = "path:./flakes/wow-forever";
+    wow-forever.inputs.nixpkgs.follows = "nixpkgs";
   };
 
-  outputs = inputs@{ self, nix-darwin, nixpkgs, nix-homebrew, home-manager, homebrew-core, homebrew-cask, nixos-generators, sops-nix, deploy-rs, heimdall, disko, nixos-wsl }:
+  outputs = inputs@{ self, nix-darwin, nixpkgs, nix-homebrew, home-manager, homebrew-core, homebrew-cask, nixos-generators, sops-nix, deploy-rs, heimdall, disko, nixos-wsl, wow-forever }:
   let
     # Darwin pkgs
     darwinPkgs = import nixpkgs {
@@ -239,7 +243,11 @@
             home-manager.useUserPackages = true;
             home-manager.backupFileExtension = "hm-backup";
             home-manager.users.austin = {
-              imports = [ ./modules/common/home.nix ./modules/hosts/gaming-pc/home.nix ];
+              imports = [
+                ./modules/common/home.nix
+                ./modules/hosts/gaming-pc/home.nix
+                wow-forever.homeModules.default
+              ];
             };
           }
         ];

@@ -33,6 +33,8 @@ NixOS hosts (gaming PC, NixOS-WSL), and a k3s cluster on Mac minis.
 │   ├── hosts/wsl/               # NixOS-WSL on the Windows PC (CLI tools, zsh, Home Manager)
 │   ├── local-ai/                # LM Studio + Zed (local LLM) config; not on k8s nodes
 │   └── kubernetes/              # NixOS k8s cluster configs (nodes, disko, hardening)
+├── flakes/
+│   └── wow-forever/             # Sub-flake (path input): WoW Forever via battlenet-umu, used by gaming-pc
 ├── scripts/                     # install-node.sh, install-gaming-pc.sh (nixos-anywhere wrappers)
 ├── secrets/                     # sops-encrypted k8s secrets
 ├── devbox.json                  # Cluster-management shell (sops, age, kubectl, helm, k9s)

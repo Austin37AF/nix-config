@@ -60,6 +60,15 @@
       system = "x86_64-linux";
       config.allowUnfree = true;
     };
+    # deploy-rs lib with the nixpkgs deploy-rs binary (cache.nixos.org) instead of
+    # compiling the flake's Rust build, which follows our nixpkgs and is never cached
+    deployPkgs = import nixpkgs {
+      system = "x86_64-linux";
+      overlays = [
+        deploy-rs.overlays.default
+        (final: prev: { deploy-rs = { inherit (nixosPkgs) deploy-rs; lib = prev.deploy-rs.lib; }; })
+      ];
+    };
   in
   {
     # Dev shell for projects without their own Devbox
@@ -308,8 +317,8 @@
     # Deploy one node:       nix run .#deploy -- .#k8s-server-1
     # Skip checks:           nix run .#deploy -- --skip-checks
 
-    apps.aarch64-darwin.deploy = deploy-rs.apps.aarch64-darwin.default;
-    apps.x86_64-linux.deploy = deploy-rs.apps.x86_64-linux.default;
+    apps.aarch64-darwin.deploy = { type = "app"; program = "${darwinPkgs.deploy-rs}/bin/deploy"; };
+    apps.x86_64-linux.deploy = { type = "app"; program = "${nixosPkgs.deploy-rs}/bin/deploy"; };
     
     deploy = {
       sshUser = "k8sadmin";
@@ -325,7 +334,7 @@
         mkDeployNode = name: {
           hostname = clusterCfg.nodes.${name}.ip;
           profiles.system = {
-            path = deploy-rs.lib.x86_64-linux.activate.nixos self.nixosConfigurations.${name};
+            path = deployPkgs.deploy-rs.lib.activate.nixos self.nixosConfigurations.${name};
           };
         };
       in {
@@ -337,6 +346,6 @@
     };
 
     # Deploy-rs checks (nodes are x86_64-linux; other systems would try to build their closures)
-    checks.x86_64-linux = deploy-rs.lib.x86_64-linux.deployChecks self.deploy;
+    checks.x86_64-linux = deployPkgs.deploy-rs.lib.deployChecks self.deploy;
   };
 }

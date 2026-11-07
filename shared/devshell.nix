@@ -31,7 +31,7 @@ in
 pkgs.mkShell {
   packages = packages.cli ++ packages.dev
     # devin-cli is only distributed as an aarch64-darwin binary
-    ++ pkgs.lib.optionals pkgs.stdenv.isDarwin [ devin-cli ];
+    ++ pkgs.lib.optionals pkgs.stdenv.hostPlatform.isDarwin [ devin-cli ];
   
   shellHook = ''
     # Only show message in interactive shells

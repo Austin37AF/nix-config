@@ -13,6 +13,8 @@
 { config, lib, pkgs, ... }:
 
 let
+  isDarwin = pkgs.stdenv.hostPlatform.isDarwin;
+
   # Fusion pairs a lead model with a sidekick; the model ID is
   # fusion-<lead>-sidekick-<sidekick> (switch per session with /fusion or /model)
   fusion = { lead = "claude-opus-5-5-medium"; sidekick = "claude-sonnet-5-5-medium"; };
@@ -31,7 +33,7 @@ let
       allow = [
         "Exec(git status)" "Exec(git diff)" "Exec(git log)" "Exec(git show)" "Exec(git branch --show-current)"
         "Exec(nix eval)" "Exec(nix build)" "Exec(nix flake show)" "Exec(nix flake metadata)" "Exec(nix flake check)"
-        "Exec(darwin-rebuild build)"
+        (if isDarwin then "Exec(darwin-rebuild build)" else "Exec(nixos-rebuild build)")
         "Exec(ls)" "Exec(readlink)" "Exec(which)" "Exec(wc)"
         "Exec(gh pr view)" "Exec(gh pr diff)" "Exec(gh pr checks)"
         "Exec(terraform fmt)" "Exec(terraform validate)" "Exec(tofu fmt)" "Exec(tofu validate)"
@@ -42,12 +44,21 @@ let
         "Exec(kubectl apply)" "Exec(kubectl create)" "Exec(kubectl delete)" "Exec(kubectl patch)"
         "Exec(kubectl edit)" "Exec(kubectl scale)" "Exec(helm install)" "Exec(helm upgrade)" "Exec(helm uninstall)"
       ];
-      deny = [
-        "Exec(sudo)" "Exec(darwin-rebuild switch)" "Exec(darwin-rebuild activate)"
-        "Exec(git push --force)" "Exec(git push -f)" "Exec(git push --force-with-lease)"
-      ];
+      deny = [ "Exec(sudo)" ]
+        ++ (if isDarwin
+          then [ "Exec(darwin-rebuild switch)" "Exec(darwin-rebuild activate)" ]
+          else [ "Exec(nixos-rebuild switch)" "Exec(nixos-rebuild boot)" ])
+        ++ [ "Exec(git push --force)" "Exec(git push -f)" "Exec(git push --force-with-lease)" ];
     };
   };
+
+  machineNotes = if isDarwin then ''
+    - macOS managed by nix-darwin + home-manager from the flake at ~/homelab/nix. Homebrew packages, dotfiles and app settings are declared there: change the Nix config instead of running `brew install` or editing managed files (they are symlinks into /nix/store).
+    - The user applies changes by running `rebuild` (needs sudo). Don't run `darwin-rebuild switch` or sudo yourself; validate with `nix build .#darwinConfigurations.<host>.system` or `darwin-rebuild build`. Flakes only see files git knows about, so `git add` (or `git add -N`) new files first.
+  '' else ''
+    - NixOS (gaming PC) managed by a flake at ~/homelab/nix with Home Manager. Packages, dotfiles and app settings are declared there: change the Nix config instead of installing imperatively or editing managed files (they are symlinks into /nix/store).
+    - The user applies changes by running `rebuild` (needs sudo). Don't run `nixos-rebuild switch` or sudo yourself; validate with `nix build .#nixosConfigurations.<host>.config.system.build.toplevel` or `nixos-rebuild build --flake .`. Flakes only see files git knows about, so `git add` (or `git add -N`) new files first.
+  '';
 
   mergeScript = pkgs.writeShellScript "devin-config-merge" ''
     set -euo pipefail
@@ -102,15 +113,15 @@ let
   '';
 in
 {
+  imports = [ ./editor.nix ];
+
   # Global Devin CLI rules (~/.config/devin/AGENTS.md; the CLI reads this
   # like AGENTS.md/global rules)
   home.file.".config/devin/AGENTS.md".text = ''
     # Global rules
 
     ## This machine
-    - macOS managed by nix-darwin + home-manager from the flake at ~/homelab/nix. Homebrew packages, dotfiles and app settings are declared there: change the Nix config instead of running `brew install` or editing managed files (they are symlinks into /nix/store).
-    - The user applies changes by running `rebuild` (needs sudo). Don't run `darwin-rebuild switch` or sudo yourself; validate with `nix build .#darwinConfigurations.<host>.system` or `darwin-rebuild build`. Flakes only see files git knows about, so `git add` (or `git add -N`) new files first.
-
+    ${machineNotes}
     ## Git
     - Don't push or force-push unless asked.
     - Keep commits small and focused; match the repo's existing commit message style.

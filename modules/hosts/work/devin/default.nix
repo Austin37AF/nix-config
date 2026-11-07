@@ -1,7 +1,7 @@
 # Work-only Devin CLI additions:
 # - append the Zscaler + Kubernetes notes to the managed
 #   ~/.config/devin/AGENTS.md (home.file.text is types.lines, so this is
-#   concatenated after the base text from modules/darwin/devin)
+#   concatenated after the base text from modules/common/devin)
 # - out-of-store symlinks for per-repo AGENTS.local.md files and Devin
 #   skills. The links point at this live checkout (not a /nix/store copy),
 #   so editing the files takes effect without a rebuild; AGENTS.local.md is

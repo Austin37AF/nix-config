@@ -68,7 +68,7 @@ nix flake update           # update all inputs
 
 ## Devin (CLI + Desktop)
 
-- `~/.config/devin/AGENTS.md`: global rules — base set (`modules/darwin/devin`)
+- `~/.config/devin/AGENTS.md`: global rules — base set (`modules/common/devin`)
   plus a work addendum (Zscaler, kubectl/helm/Atlantis guardrails,
   `modules/hosts/work/devin`).
 - `mcp_config.json`: declarative user-scope MCP servers (Atlassian).
@@ -90,7 +90,7 @@ nix flake update           # update all inputs
   | `go-bump-release` | Bump a Go repo's version, PR, release, verify published binaries |
   | `ci-local` | Run a repo's GitHub Actions jobs locally with `act` |
 
-- Permissions (in `modules/darwin/devin/default.nix`):
+- Permissions (in `modules/common/devin/default.nix`):
   - allow: read-only git, `nix eval/build/flake show|metadata|check`, `darwin-rebuild build`, `gh pr view/diff/checks`, terraform/tofu `fmt`/`validate`, `helm template/lint`, `pre-commit run`, `aws sts get-caller-identity`
   - ask: terraform/tofu `apply`/`destroy`, mutating kubectl, `helm install/upgrade/uninstall`
   - deny: `sudo`, `darwin-rebuild switch/activate`, `git push --force*`

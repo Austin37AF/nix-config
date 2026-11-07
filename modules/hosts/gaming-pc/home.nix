@@ -1,6 +1,10 @@
 # Gaming PC Home Manager settings
-{ ... }:
+{ pkgs, ... }:
 {
+  imports = [ ../../common/devin ];
+
+  home.packages = [ pkgs.devin-desktop pkgs.devin-cli ];
+
   # GitHub key for this machine (~/.ssh/gaming-pc); ad-hoc hosts go in ~/.ssh/config.local
   programs.ssh = {
     enable = true;

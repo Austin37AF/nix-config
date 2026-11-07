@@ -8,6 +8,7 @@
     devin-cli
     discord
     google-chrome
+    bambu-studio
   ];
 
   # Battle.net + WoW Forever launchers and declarative addons (./wow-forever)

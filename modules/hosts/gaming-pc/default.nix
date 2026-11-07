@@ -47,6 +47,7 @@
     # kernel modules need Turing or newer, so use the proprietary 580 legacy driver.
     open = false;
     modesetting.enable = true;
+    powerManagement.enable = true;
     nvidiaSettings = true;
     package = config.boot.kernelPackages.nvidiaPackages.legacy_580;
   };

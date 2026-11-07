@@ -1,5 +1,22 @@
 # Gaming PC Home Manager settings
 { pkgs, ... }:
+let
+  # Bambu Studio's 3D view renders blank with the NVIDIA EGL driver (GTX 1060, 580 legacy).
+  # Run its OpenGL through Mesa's Zink instead, which still uses the GPU via NVIDIA's Vulkan driver.
+  # Wraps the existing package, so it doesn't trigger a rebuild from source.
+  bambu-studio = pkgs.symlinkJoin {
+    name = "bambu-studio-zink";
+    paths = [ pkgs.bambu-studio ];
+    nativeBuildInputs = [ pkgs.makeWrapper ];
+    postBuild = ''
+      wrapProgram $out/bin/bambu-studio \
+        --set __GLX_VENDOR_LIBRARY_NAME mesa \
+        --set __EGL_VENDOR_LIBRARY_FILENAMES /run/opengl-driver/share/glvnd/egl_vendor.d/50_mesa.json \
+        --set MESA_LOADER_DRIVER_OVERRIDE zink \
+        --set GALLIUM_DRIVER zink
+    '';
+  };
+in
 {
   imports = [ ../../shared/devin ];
 
@@ -8,7 +25,7 @@
     devin-cli
     discord
     google-chrome
-    bambu-studio
+    bambu-studio # the Zink wrapper above (let bindings shadow `with pkgs`)
   ];
 
   # Battle.net + WoW Forever launchers and declarative addons (./wow-forever)

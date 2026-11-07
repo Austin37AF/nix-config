@@ -214,6 +214,12 @@ branches dropped Pascal and the open kernel modules need Turing or newer.
    `~/.ssh/gaming-pc`) and activates with sudo.
 4. Point the Steam / Lutris libraries at `/games`.
 
+Apps are in `hosts/gaming-pc/home.nix` (`home.packages`). After a `rebuild` that adds an app,
+a Plasma session that was already running may not show it in the launcher/search, or may show
+it without an icon, until Plasma reloads: `systemctl --user restart plasma-plasmashell` (or log
+out and back in). Bambu Studio is partly unfree, so cache.nixos.org has no prebuilt copy: it
+compiles from source after each nixpkgs update, which makes that rebuild long.
+
 The install builds on the PC under sustained all-core load. Check cooling first: the CPU
 should idle around 35-50°C in the BIOS hardware monitor. Dried thermal paste and a dusty
 radiator once made it climb past 85°C at idle and power off mid-install.

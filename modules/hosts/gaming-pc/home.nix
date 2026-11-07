@@ -3,7 +3,12 @@
 {
   imports = [ ../../common/devin ];
 
-  home.packages = [ pkgs.devin-desktop pkgs.devin-cli ];
+  home.packages = with pkgs; [
+    devin-desktop
+    devin-cli
+    discord
+    google-chrome
+  ];
 
   # Battle.net + WoW Forever launchers and declarative addons (flakes/wow-forever)
   programs.wow-forever = {

@@ -47,9 +47,17 @@
     # kernel modules need Turing or newer, so use the proprietary 580 legacy driver.
     open = false;
     modesetting.enable = true;
-    powerManagement.enable = true;
     nvidiaSettings = true;
     package = config.boot.kernelPackages.nvidiaPackages.legacy_580;
+  };
+
+  # No suspend: on this GTX 1060 + 580 driver, resuming corrupts KWin's GPU context (Xid 13),
+  # and powerManagement.enable (PreserveVideoMemoryAllocations) made KWin fault at boot (Xid 32).
+  systemd.sleep.settings.Sleep = {
+    AllowSuspend = "no";
+    AllowHibernation = "no";
+    AllowHybridSleep = "no";
+    AllowSuspendThenHibernate = "no";
   };
 
   services.desktopManager.plasma6.enable = true;
@@ -86,7 +94,7 @@
   programs.zsh.enable = true;
   users.users.austin = {
     isNormalUser = true;
-    extraGroups = [ "wheel" "networkmanager" "gamemode" "video" ];
+    extraGroups = [ "wheel" "networkmanager" "gamemode" "video" "systemd-journal" ];
     shell = pkgs.zsh;
     # Change with `passwd` on first login
     initialPassword = "changeme";

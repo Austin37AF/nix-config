@@ -62,13 +62,62 @@ let
       fi
     done
   '';
+
+  # Git for Windows: when Devin Desktop opens the workspace over
+  # \\wsl.localhost (no WSL remote server), its SCM extension probes fixed
+  # git.exe paths on the Windows side. Installs via winget on first rebuild.
+  # The Git.Git installer UAC-elevates, so this is guarded by the probe paths
+  # and timeout-wrapped — it can't block a rebuild, only warn.
+  gitForWindows = pkgs.writeShellScript "git-for-windows" ''
+    set -uo pipefail
+    [ -f "/mnt/c/Program Files/Git/cmd/git.exe" ] && exit 0
+    [ -f "/mnt/c/Users/austi/AppData/Local/Programs/Git/cmd/git.exe" ] && exit 0
+    /mnt/c/Windows/System32/where.exe /Q git >/dev/null 2>&1 && exit 0
+
+    winget=/mnt/c/Users/austi/AppData/Local/Microsoft/WindowsApps/winget.exe
+    [ -f "$winget" ] || { echo "warning: winget not found; skipping Git for Windows" >&2; exit 0; }
+    ${pkgs.coreutils}/bin/timeout 180 "$winget" install -e --id Git.Git \
+      --accept-source-agreements --accept-package-agreements --disable-interactivity \
+      || echo "warning: Git for Windows install failed or UAC was declined" >&2
+  '';
 in
 {
+  # direnv auto-loads the dev shell, like modules/hosts/work/direnv.nix on the
+  # Mac. nix-direnv backs `use flake` and caches the shell (second entry ~0.2s).
+  # The whitelist uses `exact` (not `prefix`): a prefix whitelist would
+  # auto-trust any .envrc committed under ~/repos.
+  programs.direnv = {
+    enable = true;
+    nix-direnv.enable = true;
+    enableZshIntegration = false; # common/zsh.nix already runs `direnv hook zsh`
+  };
+
+  home.file = {
+    ".config/direnv/direnv.toml".text = ''
+      [global]
+      hide_env_diff = true
+
+      [whitelist]
+      exact = ["/home/nixos/repos/.envrc", "/home/nixos/repos/nix-config/.envrc", "/home/nixos/homelab/nix/.envrc"]
+    '';
+
+    # Every repo under ~/repos gets the nix-config dev shell; a repo's own
+    # .envrc (e.g. this repo's) wins as the nearer file.
+    "repos/.envrc".text = ''
+      use flake /home/nixos/homelab/nix
+      watch_file /home/nixos/homelab/nix/flake.lock /home/nixos/homelab/nix/modules/devshell.nix /home/nixos/homelab/nix/modules/common/packages.nix /home/nixos/homelab/nix/modules/common/env.nix
+    '';
+  };
+
   home.activation.devinEditorSettings = lib.hm.dag.entryAfter [ "linkGeneration" ] ''
     run ${editorSettingsMerge}
   '';
 
   home.activation.windowsNerdFont = lib.hm.dag.entryAfter [ "linkGeneration" ] ''
     run ${windowsNerdFont}
+  '';
+
+  home.activation.gitForWindows = lib.hm.dag.entryAfter [ "linkGeneration" ] ''
+    run ${gitForWindows}
   '';
 }

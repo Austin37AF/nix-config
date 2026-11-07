@@ -104,9 +104,12 @@ nix flake update           # update all inputs
 
 ## Work dev shell via direnv
 
-- `.envrc` in `~/brt-projects` and `~/sparkai-projects` runs `use flake
-  ~/homelab/nix`; nix-direnv caches the shell (second entry ~0.2s).
-  `direnv.toml` whitelists those two exact paths only.
+- `.envrc` in `~/brt-projects` and `~/sparkai-projects` (Mac) and `~/repos`
+  (WSL) runs `use flake ~/homelab/nix`; nix-direnv caches the shell (second
+  entry ~0.2s). `direnv.toml` whitelists those exact paths only — a repo's
+  own `.envrc` needs a one-time `direnv allow`.
+- This repo also commits a `.envrc` (`use flake`), whitelisted on both hosts
+  (`~/homelab/nix`, `~/repos/nix-config`).
 - The dev shell's interactive bits (aliases, completions, powerline prompt)
   are skipped when `DIRENV_IN_ENVRC` is set; env/PATH exports always apply.
 - Agent shells don't run the direnv hook — use `direnv exec . <cmd>`.

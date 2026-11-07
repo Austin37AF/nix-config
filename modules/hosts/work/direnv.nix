@@ -18,7 +18,7 @@
       hide_env_diff = true
 
       [whitelist]
-      exact = ["/Users/austin.mills/brt-projects/.envrc", "/Users/austin.mills/sparkai-projects/.envrc"]
+      exact = ["/Users/austin.mills/brt-projects/.envrc", "/Users/austin.mills/sparkai-projects/.envrc", "/Users/austin.mills/homelab/nix/.envrc"]
     '';
 
     "brt-projects/.envrc".text = ''

@@ -1,10 +1,11 @@
-name: Build K8s Installer ISO
+name: Build Installer ISO
 
 on:
   push:
     branches: [main]
     paths:
-      - 'modules/kubernetes/**'
+      - 'installer/**'
+      - 'shared/ssh-keys.nix'
       - 'flake.nix'
       - 'flake.lock'
       - '.github/workflows/build-iso.yaml'
@@ -14,7 +15,7 @@ jobs:
   build-iso:
     runs-on: ubuntu-latest
     permissions:
-      contents: write  # publish the ISO to the rolling `k8s-installer` release
+      contents: write  # publish the ISO to the rolling `nixos-installer` release
     steps:
       - name: Checkout
         uses: actions/checkout@v4
@@ -33,34 +34,18 @@ jobs:
           authToken: '${{ secrets.CACHIX_AUTH_TOKEN }}'
         continue-on-error: true  # Don't fail if no cachix token
 
-      # The heimdall input is git+ssh to a private repo; evaluating the flake
-      # fetches all inputs, so the runner needs a key with read access to it.
-      # Set FLAKE_INPUT_SSH_KEY to a read-only deploy key on Austin37AF/heimdall.
-      - name: Configure SSH for private flake inputs
-        env:
-          FLAKE_INPUT_SSH_KEY: ${{ secrets.FLAKE_INPUT_SSH_KEY }}
-        run: |
-          if [ -z "$FLAKE_INPUT_SSH_KEY" ]; then
-            echo "FLAKE_INPUT_SSH_KEY not set; private flake inputs will fail to fetch"
-            exit 0
-          fi
-          mkdir -p ~/.ssh
-          echo "$FLAKE_INPUT_SSH_KEY" > ~/.ssh/id_ed25519
-          chmod 600 ~/.ssh/id_ed25519
-          ssh-keyscan github.com >> ~/.ssh/known_hosts 2>/dev/null
-
       - name: Build ISO
         run: |
-          nix build .#packages.x86_64-linux.k8s-installer-iso --print-build-logs
+          nix build .#packages.x86_64-linux.installer-iso --print-build-logs
 
       # Release assets don't count against the (small) Actions artifact quota.
-      # Download: gh release download k8s-installer -R Austin37AF/nix-config
+      # Download: gh release download nixos-installer -R Austin37AF/nix-config
       - name: Publish ISO to release
         env:
           GH_TOKEN: ${{ github.token }}
         run: |
-          cp result/iso/*.iso k8s-installer.iso
-          gh release view k8s-installer >/dev/null 2>&1 || \
-            gh release create k8s-installer --prerelease --title "K8s installer ISO" --notes "Rolling build"
-          gh release upload k8s-installer k8s-installer.iso --clobber
-          gh release edit k8s-installer --notes "Built from ${GITHUB_SHA} on $(date -u +%F)"
+          cp result/iso/*.iso nixos-installer.iso
+          gh release view nixos-installer >/dev/null 2>&1 || \
+            gh release create nixos-installer --prerelease --title "NixOS installer ISO" --notes "Rolling build"
+          gh release upload nixos-installer nixos-installer.iso --clobber
+          gh release edit nixos-installer --notes "Built from ${GITHUB_SHA} on $(date -u +%F)"

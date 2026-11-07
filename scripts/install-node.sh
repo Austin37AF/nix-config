@@ -7,8 +7,8 @@ set -euo pipefail
 # Usage: ./scripts/install-node.sh <node-name> <installer-ip>
 #   e.g. ./scripts/install-node.sh k8s-server-1 10.17.17.50
 #
-# The target must be booted from the k8s installer ISO (root SSH with your key).
-# WARNING: wipes the disk configured in modules/kubernetes/cluster-config.nix.
+# The target must be booted from the installer ISO (root SSH with your key).
+# WARNING: wipes the disk configured in hosts/k8s/cluster-config.nix.
 
 NODE="${1:-}"
 IP="${2:-}"
@@ -16,11 +16,11 @@ cd "$(dirname "$0")/.."
 
 if [[ -z "$NODE" || -z "$IP" ]]; then
     echo "Usage: $0 <node-name> <installer-ip>"
-    echo "Nodes: $(nix eval --raw --apply 'n: builtins.concatStringsSep " " (builtins.attrNames n)' --file modules/kubernetes/cluster-config.nix nodes)"
+    echo "Nodes: $(nix eval --raw --apply 'n: builtins.concatStringsSep " " (builtins.attrNames n)' --file hosts/k8s/cluster-config.nix nodes)"
     exit 1
 fi
 
-DISK=$(nix eval --raw --file modules/kubernetes/cluster-config.nix \
+DISK=$(nix eval --raw --file hosts/k8s/cluster-config.nix \
     --apply "c: if c.nodes ? \"$NODE\" then c.nodes.\"$NODE\".disk or c.defaultDisk else throw \"unknown node\"" 2>/dev/null) \
     || { echo "Unknown node: $NODE"; exit 1; }
 
@@ -30,7 +30,7 @@ SOPS="nix shell nixpkgs#sops -c sops"
 EXTRA=$(mktemp -d)
 trap 'rm -rf "$EXTRA"' EXIT
 install -d -m 755 "$EXTRA/etc/ssh"
-(umask 077 && $SOPS -d --extract "[\"$NODE\"]" secrets/host-keys.yaml > "$EXTRA/etc/ssh/ssh_host_ed25519_key")
+(umask 077 && $SOPS -d --extract "[\"$NODE\"]" hosts/k8s/secrets/host-keys.yaml > "$EXTRA/etc/ssh/ssh_host_ed25519_key")
 ssh-keygen -y -f "$EXTRA/etc/ssh/ssh_host_ed25519_key" > "$EXTRA/etc/ssh/ssh_host_ed25519_key.pub"
 chmod 644 "$EXTRA/etc/ssh/ssh_host_ed25519_key.pub"
 
@@ -42,7 +42,7 @@ read -r -p "Type the node name to continue: " CONFIRM
 [[ "$CONFIRM" == "$NODE" ]] || { echo "Aborted."; exit 1; }
 
 nix run github:nix-community/nixos-anywhere -- \
-    --flake ".#$NODE" \
+    --flake "./hosts/k8s#$NODE" \
     --target-host "root@$IP" \
     --extra-files "$EXTRA" \
     --build-on remote

@@ -14,13 +14,13 @@
     "init_hook": [
       "echo '🚀 NixOS K8s Cluster Management'",
       "echo ''",
-      "echo 'Setup secrets:    sops secrets/k8s.yaml'",
-      "echo 'Build ISO:        nix build .#k8s-installer-iso'",
+      "echo 'Setup secrets:    sops hosts/k8s/secrets/k8s.yaml'",
+      "echo 'Build ISO:        nix build .#installer-iso'",
       "echo 'Flash USB:        open -a balenaEtcher'",
-      "echo 'Deploy all:       nix run .#deploy'",
-      "echo 'Deploy one:       nix run .#deploy .#k8s-server-1'",
+      "echo 'Deploy all:       nix run ./hosts/k8s#deploy'",
+      "echo 'Deploy one:       nix run ./hosts/k8s#deploy -- ./hosts/k8s#k8s-server-1'",
       "echo ''",
-      "echo 'See modules/kubernetes/README.md for full instructions'"
+      "echo 'See hosts/k8s/README.md for full instructions'"
     ]
   }
 }

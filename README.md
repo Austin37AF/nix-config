@@ -219,6 +219,9 @@ a Plasma session that was already running may not show it in the launcher/search
 it without an icon, until Plasma reloads: `systemctl --user restart plasma-plasmashell` (or log
 out and back in). Bambu Studio is partly unfree, so cache.nixos.org has no prebuilt copy: it
 compiles from source after each nixpkgs update, which makes that rebuild long.
+Its 3D view renders blank on the NVIDIA OpenGL driver (XWayland doesn't help), so `home.nix`
+wraps it to run on Mesa's Zink (OpenGL over NVIDIA's Vulkan driver, still on the GPU). If another
+app shows a blank 3D view, wrap it the same way.
 
 The install builds on the PC under sustained all-core load. Check cooling first: the CPU
 should idle around 35-50°C in the BIOS hardware monitor. Dried thermal paste and a dusty

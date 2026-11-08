@@ -222,6 +222,9 @@ compiles from source after each nixpkgs update, which makes that rebuild long.
 Its 3D view renders blank on the NVIDIA OpenGL driver (XWayland doesn't help), so `home.nix`
 wraps it to run on Mesa's Zink (OpenGL over NVIDIA's Vulkan driver, still on the GPU). If another
 app shows a blank 3D view, wrap it the same way.
+WoW Forever addons are in `programs.wow-forever.addons` (same file) and sync on every rebuild.
+CurseForge (`curse:`) addons need a CurseForge API key, set once on the PC and kept out of the
+repo: `instawow -p forever configure global_config.access_tokens.cfcore`, then `sync-addons forever`.
 
 The install builds on the PC under sustained all-core load. Check cooling first: the CPU
 should idle around 35-50°C in the BIOS hardware monitor. Dried thermal paste and a dusty

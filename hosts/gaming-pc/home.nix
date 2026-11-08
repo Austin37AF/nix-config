@@ -32,7 +32,13 @@ in
   programs.wow-forever = {
     enable = true;
     prefix = "/games/battlenet-umu/prefix"; # games NVMe, not the OS SSD
-    addons = [ ];
+    # CurseForge needs an API key, kept out of the repo (the module's `tokens` option would put
+    # it in the world-readable Nix store). Set it once on the PC:
+    #   instawow -p forever configure global_config.access_tokens.cfcore
+    addons = [
+      "curse:forever-guide" # https://www.curseforge.com/wow/addons/forever-guide
+      "curse:details" # Details! damage meter
+    ];
   };
 
   # GitHub key for this machine (~/.ssh/gaming-pc); ad-hoc hosts go in ~/.ssh/config.local

@@ -106,6 +106,7 @@ in
   # Build as the user (private heimdall input over the user's SSH key), activate with sudo
   programs.zsh.interactiveShellInit = lib.mkAfter ''
     alias rebuild="nixos-rebuild switch --flake ~/homelab/nix/hosts/gaming-pc#gaming-pc --sudo"
+    alias wowf="wow-forever-umu" # launch WoW Forever (./wow-forever)
   '';
 
   programs.zsh.enable = true;

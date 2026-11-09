@@ -27,6 +27,7 @@ and a machine only gets one if it lists it in its imports (or in its `flake.nix`
 │   │   ├── flake.nix            # own flake.lock
 │   │   ├── default.nix, home.nix, hardware-configuration.nix
 │   │   ├── wow-forever/         # WoW Forever via battlenet-umu + pinned CurseForge addons
+│   │   ├── jagex-launcher/      # official Jagex Launcher (OSRS, RuneLite) via umu + Proton-GE
 │   │   └── install-hook.sh      # install-host hook: formats the games disk once
 │   ├── wsl/                     # NixOS-WSL on the Windows PC (own flake.lock)
 │   └── k8s/                     # k3s cluster nodes, deploy-rs, sops secrets (own flake.lock)
@@ -190,7 +191,8 @@ host's heimdall flake input. `heimdall cluster update` deploys from `~/homelab/n
 
 `gaming-pc` (`hosts/gaming-pc`): MSI board, Ryzen 7 2700X (AIO cooler), 32GB,
 GTX 1060 6GB, KDE Plasma 6, Steam (Proton-GE), Lutris, WoW Forever (Battle.net via
-battlenet-umu, `hosts/gaming-pc/wow-forever`), Discord, Chrome, Bambu Studio. The OS
+battlenet-umu, `hosts/gaming-pc/wow-forever`), OSRS/RuneLite (official Jagex Launcher,
+`hosts/gaming-pc/jagex-launcher`), Discord, Chrome, Bambu Studio. The OS
 lives on the 240GB SATA SSD (`/dev/sda`, disko, wiped on install); the 1TB NVMe is mounted
 at `/games` by label and is **not** in disko, so reinstalling keeps it.
 
@@ -231,6 +233,12 @@ WoW Forever addons are CurseForge files pinned by ID and hash in
 rebuild (no API key or instawow). WoW only scans addons at startup, so restart it after a rebuild. `wow-addons-update` bumps them to the newest WoW Forever
 release; commit the change and rebuild. To add an addon, add `"<name>": { "projectId": <id> }`
 (the Project ID is on its CurseForge page) and run `wow-addons-update`.
+
+OSRS: the **Jagex Launcher** menu entry runs Jagex's official Windows launcher through umu and
+Proton-GE in `/games/jagex-umu/prefix`; no third-party launcher handles the login. Its Windows
+installer doesn't work under Wine, so Nix rebuilds the install folder from Jagex's CDN (pinned,
+checksummed) and copies it into the prefix on first launch; the launcher updates itself after
+that. Pick RuneLite as the OSRS game client inside the launcher.
 
 The install builds on the PC under sustained all-core load. Check cooling first: the CPU
 should idle around 35-50°C in the BIOS hardware monitor. Dried thermal paste and a dusty

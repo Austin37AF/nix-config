@@ -40,6 +40,7 @@
               ./home.nix
               battlenet-umu.homeModules.default
               ./wow-forever
+              ./jagex-launcher
             ];
           };
         }

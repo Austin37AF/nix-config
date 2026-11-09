@@ -190,7 +190,8 @@ host's heimdall flake input. `heimdall cluster update` deploys from `~/homelab/n
 
 `gaming-pc` (`hosts/gaming-pc`): MSI board, Ryzen 7 2700X (AIO cooler), 32GB,
 GTX 1060 6GB, KDE Plasma 6, Steam (Proton-GE), Lutris, WoW Forever (Battle.net via
-battlenet-umu, `hosts/gaming-pc/wow-forever`), Discord, Chrome, Bambu Studio. The OS
+battlenet-umu, `hosts/gaming-pc/wow-forever`), OSRS (RuneLite via Bolt), Discord, Chrome,
+Bambu Studio. The OS
 lives on the 240GB SATA SSD (`/dev/sda`, disko, wiped on install); the 1TB NVMe is mounted
 at `/games` by label and is **not** in disko, so reinstalling keeps it.
 

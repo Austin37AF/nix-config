@@ -26,6 +26,7 @@ in
     discord
     google-chrome
     bambu-studio # the Zink wrapper above (let bindings shadow `with pkgs`)
+    bolt-launcher # Jagex account login for OSRS; launches RuneLite
   ];
 
   # Battle.net + WoW Forever launchers and declarative addons (./wow-forever)

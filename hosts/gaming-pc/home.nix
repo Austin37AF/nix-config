@@ -1,5 +1,5 @@
 # Gaming PC Home Manager settings
-{ pkgs, ... }:
+{ lib, pkgs, ... }:
 let
   # Bambu Studio's 3D view renders blank with the NVIDIA EGL driver (GTX 1060, 580 legacy).
   # Run its OpenGL through Mesa's Zink instead, which still uses the GPU via NVIDIA's Vulkan driver.
@@ -32,13 +32,9 @@ in
   programs.wow-forever = {
     enable = true;
     prefix = "/games/battlenet-umu/prefix"; # games NVMe, not the OS SSD
-    # CurseForge needs an API key, kept out of the repo (the module's `tokens` option would put
-    # it in the world-readable Nix store). Set it once on the PC:
-    #   instawow -p forever configure global_config.access_tokens.cfcore
-    addons = [
-      "curse:forever-guide" # https://www.curseforge.com/wow/addons/forever-guide
-      "curse:details" # Details! damage meter
-    ];
+    # Pinned CurseForge files (Forever Guide, Details! damage meter). Bump them with
+    # `wow-addons-update`, then commit and rebuild; add one by its CurseForge Project ID there.
+    curseforgeAddons = lib.importJSON ./wow-forever/curseforge.json;
   };
 
   # GitHub key for this machine (~/.ssh/gaming-pc); ad-hoc hosts go in ~/.ssh/config.local

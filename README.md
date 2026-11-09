@@ -26,7 +26,7 @@ and a machine only gets one if it lists it in its imports (or in its `flake.nix`
 │   ├── gaming-pc/               # NixOS gaming PC (Plasma 6, NVIDIA 580 legacy, Steam)
 │   │   ├── flake.nix            # own flake.lock
 │   │   ├── default.nix, home.nix, hardware-configuration.nix
-│   │   ├── wow-forever/         # WoW Forever via battlenet-umu + declarative addons
+│   │   ├── wow-forever/         # WoW Forever via battlenet-umu + pinned CurseForge addons
 │   │   └── install-hook.sh      # install-host hook: formats the games disk once
 │   ├── wsl/                     # NixOS-WSL on the Windows PC (own flake.lock)
 │   └── k8s/                     # k3s cluster nodes, deploy-rs, sops secrets (own flake.lock)
@@ -222,9 +222,11 @@ compiles from source after each nixpkgs update, which makes that rebuild long.
 Its 3D view renders blank on the NVIDIA OpenGL driver (XWayland doesn't help), so `home.nix`
 wraps it to run on Mesa's Zink (OpenGL over NVIDIA's Vulkan driver, still on the GPU). If another
 app shows a blank 3D view, wrap it the same way.
-WoW Forever addons are in `programs.wow-forever.addons` (same file) and sync on every rebuild.
-CurseForge (`curse:`) addons need a CurseForge API key, set once on the PC and kept out of the
-repo: `instawow -p forever configure global_config.access_tokens.cfcore`, then `sync-addons forever`.
+WoW Forever addons are CurseForge files pinned by ID and hash in
+`hosts/gaming-pc/wow-forever/curseforge.json` and copied into the game's AddOns folder on every
+rebuild (no API key or instawow). `wow-addons-update` bumps them to the newest WoW Forever
+release; commit the change and rebuild. To add an addon, add `"<name>": { "projectId": <id> }`
+(the Project ID is on its CurseForge page) and run `wow-addons-update`.
 
 The install builds on the PC under sustained all-core load. Check cooling first: the CPU
 should idle around 35-50°C in the BIOS hardware monitor. Dried thermal paste and a dusty

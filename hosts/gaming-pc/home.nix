@@ -39,6 +39,12 @@ in
     curseforgeAddons = lib.importJSON ./wow-forever/curseforge.json;
   };
 
+  # Official Jagex Launcher (OSRS/RuneLite) via umu + Proton-GE (./jagex-launcher)
+  programs.jagex-launcher = {
+    enable = true;
+    prefix = "/games/jagex-umu/prefix"; # games NVMe, not the OS SSD
+  };
+
   # GitHub key for this machine (~/.ssh/gaming-pc); ad-hoc hosts go in ~/.ssh/config.local
   programs.ssh = {
     enable = true;

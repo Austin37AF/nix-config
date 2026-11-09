@@ -39,6 +39,9 @@ let
       WINEPREFIX = cfg.prefix;
       GAMEID = "umu-default";
       PROTONPATH = "${pkgs.proton-ge-bin.steamcompattool}";
+      # Windows Java (RuneLite) crashes at startup on Wine's AF_UNIX sockets; a socket dir that
+      # doesn't exist makes it fall back to TCP loopback. Inherited by the games it launches.
+      JAVA_TOOL_OPTIONS = "-Djdk.net.unixdomain.tmpdir=C:\\nonexistent-afunix";
     };
     text = builtins.readFile ./jagex-launcher.sh;
   };

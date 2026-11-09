@@ -222,9 +222,13 @@ compiles from source after each nixpkgs update, which makes that rebuild long.
 Its 3D view renders blank on the NVIDIA OpenGL driver (XWayland doesn't help), so `home.nix`
 wraps it to run on Mesa's Zink (OpenGL over NVIDIA's Vulkan driver, still on the GPU). If another
 app shows a blank 3D view, wrap it the same way.
+WoW Forever: the Battle.net prefix is `/games/battlenet-umu/prefix`, and the game itself goes on
+Battle.net's `S:` drive (`/games`), keeping it off the OS SSD. On a fresh install, pick
+`S:\World of Warcraft` as the install location in Battle.net; `installDir` in `home.nix` points
+the `wowf` launcher and the addons at `/games/World of Warcraft/_forever_`.
 WoW Forever addons are CurseForge files pinned by ID and hash in
 `hosts/gaming-pc/wow-forever/curseforge.json` and copied into the game's AddOns folder on every
-rebuild (no API key or instawow). `wow-addons-update` bumps them to the newest WoW Forever
+rebuild (no API key or instawow). WoW only scans addons at startup, so restart it after a rebuild. `wow-addons-update` bumps them to the newest WoW Forever
 release; commit the change and rebuild. To add an addon, add `"<name>": { "projectId": <id> }`
 (the Project ID is on its CurseForge page) and run `wow-addons-update`.
 

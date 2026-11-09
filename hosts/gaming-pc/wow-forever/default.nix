@@ -1,7 +1,7 @@
 # Home Manager module: `programs.wow-forever` on top of battlenet-umu.
 #
-# First launch of either menu entry offers to install Battle.net into the prefix (keep the
-# default install location); install WoW Forever from Battle.net, then launch "WoW Forever".
+# First launch of either menu entry offers to install Battle.net into the prefix; install WoW
+# Forever from Battle.net and set `installDir` to wherever Battle.net put its `_forever_` folder.
 #
 # Addons are CurseForge files pinned by ID and hash (`curseforgeAddons`, see ./curseforge.json).
 # Every Home Manager activation copies them into the game's AddOns folder; `wow-addons-update`
@@ -15,7 +15,11 @@
 }:
 let
   cfg = config.programs.wow-forever;
-  wowDir = "Program Files (x86)/World of Warcraft/_forever_";
+  driveC = "${cfg.prefix}/drive_c";
+  # battlenet-umu only takes game paths relative to C:, so climb from there to installDir.
+  driveCDepth = lib.length (lib.filter (c: c != "") (lib.splitString "/" driveC));
+  installDirFromDriveC =
+    lib.concatStrings (lib.replicate driveCDepth "../") + lib.removePrefix "/" cfg.installDir;
   cfApi = "https://www.curseforge.com/api/v1/mods";
 
   addonsPkg = pkgs.stdenvNoCC.mkDerivation {
@@ -54,10 +58,15 @@ in
       type = lib.types.str;
       default = "${config.xdg.dataHome}/battlenet-umu/prefix";
     };
-    exe = lib.mkOption {
-      description = "WoW Forever executable, relative to the `_forever_` install folder";
+    installDir = lib.mkOption {
+      description = "Absolute path of WoW Forever's `_forever_` install folder";
       type = lib.types.str;
-      default = "WowClassic.exe";
+      default = "${driveC}/Program Files (x86)/World of Warcraft/_forever_";
+    };
+    exe = lib.mkOption {
+      description = "WoW Forever executable, relative to `installDir`";
+      type = lib.types.str;
+      default = "Wow.exe";
     };
     curseforgeAddons = lib.mkOption {
       description = "CurseForge addon files to keep installed, by name (see ./curseforge.json)";
@@ -83,7 +92,7 @@ in
         { name = "Battle.net"; }
         {
           name = "WoW Forever";
-          path = "${wowDir}/${cfg.exe}";
+          path = "${installDirFromDriveC}/${cfg.exe}";
         }
       ];
     };
@@ -94,7 +103,7 @@ in
     # .nix-addons, so addons dropped from the list are removed and hand-installed ones are kept.
     # Skipped until WoW Forever is installed, so it never creates folders Battle.net expects to.
     home.activation.wowForeverAddons = lib.hm.dag.entryAfter [ "writeBoundary" ] ''
-      wowRoot=${lib.escapeShellArg "${cfg.prefix}/drive_c/${wowDir}"}
+      wowRoot=${lib.escapeShellArg cfg.installDir}
       if [ -d "$wowRoot" ]; then
         addonDir="$wowRoot/Interface/AddOns"
         manifest="$addonDir/.nix-addons"

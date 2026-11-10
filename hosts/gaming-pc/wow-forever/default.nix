@@ -41,6 +41,20 @@ let
     dontFixup = true;
   };
 
+  # battlenet-umu's menu entries have no icon; replace them with ones using the logos embedded in
+  # the installed .exe files (extracted on activation, since the game isn't in the Nix store).
+  iconDir = "${config.xdg.dataHome}/icons/wow-forever";
+  menuEntries = {
+    battle-net-umu = {
+      name = "Battle.net";
+      exe = cfg.battlenetExe;
+    };
+    wow-forever-umu = {
+      name = "WoW Forever";
+      exe = "${cfg.installDir}/${cfg.exe}";
+    };
+  };
+
   updateAddons = pkgs.writeShellApplication {
     name = "wow-addons-update";
     runtimeInputs = [
@@ -67,6 +81,11 @@ in
       description = "WoW Forever executable, relative to `installDir`";
       type = lib.types.str;
       default = "Wow.exe";
+    };
+    battlenetExe = lib.mkOption {
+      description = "Absolute path of the installed Battle.net launcher, for its menu icon";
+      type = lib.types.str;
+      default = "${driveC}/Program Files (x86)/Battle.net/Battle.net Launcher.exe";
     };
     curseforgeAddons = lib.mkOption {
       description = "CurseForge addon files to keep installed, by name (see ./curseforge.json)";
@@ -98,6 +117,45 @@ in
     };
 
     home.packages = [ updateAddons ];
+
+    # Same IDs as battlenet-umu's entries, so these take their place in the menu
+    xdg.dataFile = lib.mapAttrs' (
+      id: e:
+      lib.nameValuePair "applications/${id}.desktop" {
+        source = "${
+          pkgs.makeDesktopItem {
+            name = id;
+            desktopName = e.name;
+            exec = "${config.home.profileDirectory}/bin/${id}";
+            icon = "${iconDir}/${id}.png";
+            categories = [ "Game" ];
+          }
+        }/share/applications/${id}.desktop";
+      }
+    ) menuEntries;
+
+    home.activation.wowForeverIcons = lib.hm.dag.entryAfter [ "writeBoundary" ] (
+      ''
+        run mkdir -p ${lib.escapeShellArg iconDir}
+      ''
+      + lib.concatStrings (
+        lib.mapAttrsToList (id: e: ''
+          exe=${lib.escapeShellArg e.exe}
+          png=${lib.escapeShellArg "${iconDir}/${id}.png"}
+          if [ -f "$exe" ] && [ "$exe" -nt "$png" ]; then
+            ico=$(mktemp)
+            if ${pkgs.icoutils}/bin/wrestool -x -t14 "$exe" > "$ico" 2>/dev/null \
+              && w=$(${pkgs.icoutils}/bin/icotool -l "$ico" 2>/dev/null | sed -n 's/.*--width=\([0-9]*\).*/\1/p' | sort -n | tail -1) \
+              && [ -n "$w" ]; then
+              run ${pkgs.icoutils}/bin/icotool -x -w "$w" -o "$png" "$ico" 2>/dev/null
+            else
+              warnEcho "No icon found in $exe"
+            fi
+            rm -f "$ico"
+          fi
+        '') menuEntries
+      )
+    );
 
     # Copies (not symlinks: Wine runs in umu's container) and tracks what it installed in
     # .nix-addons, so addons dropped from the list are removed and hand-installed ones are kept.

@@ -46,11 +46,18 @@ let
     text = builtins.readFile ./jagex-launcher.sh;
   };
 
+  # The launcher's own logo, the largest size embedded in JagexLauncher.exe
+  icon = pkgs.runCommand "jagex-launcher.png" { nativeBuildInputs = [ pkgs.icoutils ]; } ''
+    wrestool -x -t14 ${launcherFiles}/JagexLauncher.exe > icon.ico
+    icotool -x -w 256 -o $out icon.ico
+  '';
+
   desktopItem = pkgs.makeDesktopItem {
     name = "jagex-launcher";
     desktopName = "Jagex Launcher";
     comment = "Old School RuneScape, RuneLite and RuneScape";
     exec = lib.getExe launcher;
+    icon = "${icon}";
     categories = [ "Game" ];
   };
 in

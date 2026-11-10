@@ -34,6 +34,7 @@ in
     prefix = "/games/battlenet-umu/prefix"; # games NVMe, not the OS SSD
     # Battle.net installed WoW on its S: drive (/games), outside the prefix
     installDir = "/games/World of Warcraft/_forever_";
+    battlenetExe = "/games/battlenet-umu/Battle.net/Battle.net Launcher.exe";
     # Pinned CurseForge files (Forever Guide, Details! damage meter). Bump them with
     # `wow-addons-update`, then commit and rebuild; add one by its CurseForge Project ID there.
     curseforgeAddons = lib.importJSON ./wow-forever/curseforge.json;

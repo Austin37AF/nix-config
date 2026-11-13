@@ -3,6 +3,8 @@
 #
 # First launch copies the launcher into the prefix; it updates itself from then on. Install
 # RuneLite from inside the launcher (OSRS > game client).
+#
+# A user service inhibits KDE screen-off and locking while RuneLite runs (inhibitIdleWhileRunning).
 {
   config,
   lib,
@@ -46,6 +48,23 @@ let
     text = builtins.readFile ./jagex-launcher.sh;
   };
 
+  inhibitor = pkgs.writeShellApplication {
+    name = "runelite-inhibit";
+    runtimeInputs = [
+      pkgs.procps
+      pkgs.kdePackages.kde-cli-tools
+      pkgs.coreutils
+    ];
+    text = ''
+      while true; do
+        if pgrep -x RuneLite.exe >/dev/null; then
+          kde-inhibit --power --screenSaver sh -c 'while pgrep -x RuneLite.exe >/dev/null; do sleep 30; done'
+        fi
+        sleep 30
+      done
+    '';
+  };
+
   desktopItem = pkgs.makeDesktopItem {
     name = "jagex-launcher";
     desktopName = "Jagex Launcher";
@@ -62,6 +81,11 @@ in
       type = lib.types.str;
       default = "${config.xdg.dataHome}/jagex-umu/prefix";
     };
+    inhibitIdleWhileRunning = lib.mkOption {
+      description = "Keep the screen awake and unlocked (KDE) while RuneLite is running";
+      type = lib.types.bool;
+      default = true;
+    };
     metafile = {
       id = lib.mkOption {
         description = "Jagex Launcher build to install first (`launcher-win.production` in ${"https://jagex.akamaized.net/direct6/launcher-win/alias.json"})";
@@ -76,10 +100,28 @@ in
     };
   };
 
-  config = lib.mkIf cfg.enable {
-    home.packages = [
-      launcher
-      desktopItem
-    ];
-  };
+  config = lib.mkIf cfg.enable (
+    lib.mkMerge [
+      {
+        home.packages = [
+          launcher
+          desktopItem
+        ];
+      }
+      (lib.mkIf cfg.inhibitIdleWhileRunning {
+        systemd.user.services.runelite-inhibit = {
+          Unit = {
+            Description = "Keep the screen awake while RuneLite is running";
+            PartOf = [ "graphical-session.target" ];
+            After = [ "graphical-session.target" ];
+          };
+          Service = {
+            ExecStart = lib.getExe inhibitor;
+            Restart = "on-failure";
+          };
+          Install.WantedBy = [ "graphical-session.target" ];
+        };
+      })
+    ]
+  );
 }

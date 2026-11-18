@@ -38,6 +38,11 @@ jobs:
           # so the check runs below. Set FLAKE_UPDATE_TOKEN (a PAT) to also trigger it.
           token: ${{ secrets.FLAKE_UPDATE_TOKEN || github.token }}
 
+      # create-pull-request restores the base branch afterwards; check the PR's lock instead.
+      - name: Check out the PR branch
+        if: steps.update.outputs.pull-request-number != ''
+        run: git fetch origin update-flake-lock/k8s && git checkout --detach FETCH_HEAD
+
       # Evaluates all nodes and builds their closures (deploy-rs checks), same as Flake Check.
       - name: nix flake check
         if: steps.update.outputs.pull-request-number != ''

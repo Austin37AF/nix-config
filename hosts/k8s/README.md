@@ -188,12 +188,17 @@ After initial setup, updates are pushed over SSH with deploy-rs (like Ansible, b
 The easy way is heimdall:
 
 ```bash
-(cd ~/homelab/nix/hosts/k8s && nix flake update nixpkgs)  # optional: new packages/kernel
+(cd ~/homelab/nix/hosts/k8s && nix flake update)  # or merge the weekly "k8s: update flake.lock" PR
 heimdall cluster update --dry-run    # build on the nodes, show what would change
-heimdall cluster update              # deploy to all nodes (or name specific nodes)
-heimdall cluster update --reboot     # deploy, then rolling reboot of nodes with a new kernel
+heimdall cluster update              # rolling update of all nodes (or name specific nodes)
+heimdall cluster update --no-reboot  # same, but don't reboot nodes with a new kernel
 heimdall cluster reboot-needed       # check which nodes are on an old kernel
 ```
+
+`heimdall cluster update` works like a managed node pool: it builds on every node first, then
+one node at a time (servers first) cordons and drains it, deploys, reboots it if the
+kernel/initrd changed, waits for the node to be Ready and the API server/etcd to be healthy,
+and uncordons it. It stops at the first failure.
 
 Or deploy-rs directly:
 
@@ -207,10 +212,16 @@ nix run .#deploy -- --skip-checks      # skip flake checks
 **Features:**
 - **Auto-rollback** - If deployment fails, automatically reverts
 - **Magic rollback** - If you lose SSH connection, node reverts after 60s
-- **Rolling reboots** (heimdall `--reboot`) - drain, reboot, wait for Ready, uncordon, one node at a time
+- **Rolling updates** (heimdall) - drain, deploy, reboot if needed, wait for Ready, uncordon, one node at a time
 
-deploy-rs builds on the nodes themselves (`remoteBuild`). There's no automatic upgrade:
-to update, run `nix flake update` in `hosts/k8s` (or bump single inputs), then `nix run .#deploy`. This only moves the cluster; other machines have their own lock files.
+deploy-rs builds on the nodes themselves (`remoteBuild`). Every Monday the
+`update-flake-lock` workflow opens a PR bumping `hosts/k8s/flake.lock` and runs `nix flake check`
+on it; merge it, pull, and run `heimdall cluster update`. This only moves the cluster; other
+machines have their own lock files.
+
+**k3s version:** `k8s-node.nix` pins a k3s minor (`pkgs.k3s_1_36`), so lock bumps only bring
+patch releases. Kubernetes supports upgrading one minor at a time: bump it to the next
+`k3s_1_NN`, deploy with `heimdall cluster update`, and repeat for further minors.
 
 ### Check Node Status
 

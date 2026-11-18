@@ -41,6 +41,9 @@ in
     # k3s service
     services.k3s = {
       enable = true;
+      # Pinned minor: Kubernetes only supports upgrading one minor at a time, and
+      # pkgs.k3s jumps to the newest release on a flake update. Bump by one deliberately.
+      package = pkgs.k3s_1_36;
       role = cfg.role;
       tokenFile = lib.mkIf (cfg.tokenFile != null) cfg.tokenFile;
       clusterInit = cfg.clusterInit;
@@ -83,7 +86,7 @@ in
 
     # Useful CLI tools for K8s management
     environment.systemPackages = with pkgs; [
-      k3s
+      config.services.k3s.package
       kubectl
       kubernetes-helm
       k9s

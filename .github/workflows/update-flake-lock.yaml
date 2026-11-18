@@ -1,0 +1,50 @@
+name: Update k8s flake.lock
+
+# Weekly PR bumping hosts/k8s/flake.lock (nixpkgs, sops-nix, deploy-rs, disko).
+# Merge it, then roll it out with `heimdall cluster update` (cordon, drain, deploy,
+# reboot if needed, uncordon, one node at a time). k3s stays on its pinned minor
+# (hosts/k8s/k8s-node.nix), so this only brings patch releases.
+on:
+  schedule:
+    - cron: '0 9 * * 1'  # Mondays 09:00 UTC
+  workflow_dispatch:
+
+permissions:
+  contents: write
+  pull-requests: write
+
+jobs:
+  update:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Install Nix
+        uses: cachix/install-nix-action@v31
+        with:
+          extra_nix_config: |
+            experimental-features = nix-command flakes
+
+      - name: Update flake.lock and open PR
+        id: update
+        uses: DeterminateSystems/update-flake-lock@v29
+        with:
+          path-to-flake-dir: hosts/k8s
+          branch: update-flake-lock/k8s
+          pr-title: 'k8s: update flake.lock'
+          commit-msg: 'k8s: update flake.lock'
+          # PRs opened with GITHUB_TOKEN don't trigger other workflows (Flake Check),
+          # so the check runs below. Set FLAKE_UPDATE_TOKEN (a PAT) to also trigger it.
+          token: ${{ secrets.FLAKE_UPDATE_TOKEN || github.token }}
+
+      # Evaluates all nodes and builds their closures (deploy-rs checks), same as Flake Check.
+      - name: nix flake check
+        if: steps.update.outputs.pull-request-number != ''
+        run: nix flake check --print-build-logs ./hosts/k8s
+
+      - name: k3s version
+        if: steps.update.outputs.pull-request-number != ''
+        run: |
+          v=$(nix eval --raw ./hosts/k8s#nixosConfigurations.k8s-server-1.config.services.k3s.package.version)
+          echo "k3s $v" | tee -a "$GITHUB_STEP_SUMMARY"

@@ -67,6 +67,7 @@ The Mac job evaluates both darwin systems (aarch64-darwin can't be built on the 
 
 `./scripts/update.sh <host>` updates one machine's lock (`./scripts/update.sh all` for
 everything, `./scripts/update.sh k8s -- nixpkgs` for one input). Rebuild that machine after.
+The k8s lock also gets a weekly PR from the `update-flake-lock` workflow.
 
 Two configs share the work Mac: `austin-m5-pro` (work, adds `./work`) and
 `austin-m5-pro-home` (personal, no work modules). Rebuild with `rebuild` /
@@ -180,7 +181,8 @@ NixOS k3s cluster on Mac minis; full guide in [`hosts/k8s/README.md`](hosts/k8s/
 devbox shell                        # repo root: sops, age, kubectl, helm, k9s
 sops hosts/k8s/secrets/k8s.yaml     # edit secrets
 cd hosts/k8s
-nix run .#deploy                    # deploy all nodes (or: heimdall cluster update)
+heimdall cluster update             # rolling update: drain, deploy, reboot if needed, uncordon
+nix run .#deploy                    # deploy all nodes at once, no drain
 nix run .#deploy -- .#k8s-server-1  # one node
 ```
 
